@@ -1,27 +1,28 @@
 use std::ops::Deref;
+use std::convert::TryInto;
 
 pub trait IBufferRead {
-     fn read_byte() -> u8;
-     fn read_signed_byte() -> u8;
-     fn read_bool() -> bool;
-     fn read_short() -> u8;
-     fn read_signed_short() -> u8;
-     fn read_short_le() -> u8;
-     fn read_signed_short_le() -> u8;
-     fn read_triad() -> usize;
-     fn read_triad_le() -> usize;
-     fn read_int() -> usize;
-     fn read_int_le() -> usize;
-     fn read_float() -> f32;
-     fn read_float_le() -> f32;
-     fn read_double() -> f64;
-     fn read_double_le() -> f64;
-     fn read_long() -> usize;
-     fn read_long_le() -> usize;
-     fn read_var_int() -> usize;
-     fn read_signed_var_int() -> usize;
-     fn read_var_long() -> usize;
-     fn read_signed_var_long() -> usize;
+     fn read_byte(&self) -> u8;
+     fn read_signed_byte(&self) -> u8;
+     fn read_bool(&self) -> bool;
+     fn read_short(&self) -> u8;
+     fn read_signed_short(&self) -> u8;
+     fn read_short_le(&self) -> u8;
+     fn read_signed_short_le(&self) -> u8;
+     fn read_triad(&self) -> usize;
+     fn read_triad_le(&self) -> usize;
+     fn read_int(&self) -> usize;
+     fn read_int_le(&self) -> usize;
+     fn read_float(&self) -> f32;
+     fn read_float_le(&self) -> f32;
+     fn read_double(&self) -> f64;
+     fn read_double_le(&self) -> f64;
+     fn read_long(&self) -> usize;
+     fn read_long_le(&self) -> usize;
+     fn read_var_int(&self) -> usize;
+     fn read_signed_var_int(&self) -> usize;
+     fn read_var_long(&self) -> usize;
+     fn read_signed_var_long(&self) -> usize;
 }
 
 pub trait IBufferWrite {
@@ -49,89 +50,89 @@ pub trait IBufferWrite {
 }
 
 
-/// Buffer implementation on Array
-impl<Arr> IBufferRead for Arr where Arr: Deref<Target = [u8]> {
-     fn read_byte() -> u8 {
+/// Buffer implementation on Array (im lazy someone pls)
+impl<T> IBufferRead for T where T: Deref<Target = [u8]> {
+     fn read_byte(&self) -> u8 {
           0
      }
 
-     fn read_signed_byte() -> u8 {
+     fn read_signed_byte(&self) -> u8 {
           0
      }
 
-     fn read_bool() -> bool {
+     fn read_bool(&self) -> bool {
           false
      }
 
-     fn read_short() -> u8 {
+     fn read_short(&self) -> u8 {
           0
      }
 
-     fn read_signed_short() -> u8 {
+     fn read_signed_short(&self) -> u8 {
           0
      }
 
-     fn read_short_le() -> u8 {
+     fn read_short_le(&self) -> u8 {
           0
      }
 
-     fn read_signed_short_le() -> u8 {
+     fn read_signed_short_le(&self) -> u8 {
           0
      }
 
-     fn read_triad() -> usize {
+     fn read_triad(&self) -> usize {
           0
      }
 
-     fn read_triad_le() -> usize {
+     fn read_triad_le(&self) -> usize {
           0
      }
 
-     fn read_int() -> usize {
+     fn read_int(&self) -> usize {
           0
      }
 
-     fn read_int_le() -> usize {
+     fn read_int_le(&self) -> usize {
           0
      }
 
-     fn read_float() -> f32 {
+     fn read_float(&self) -> f32 {
           0.0
      }
 
-     fn read_float_le() -> f32 {
+     fn read_float_le(&self) -> f32 {
           0.0
      }
 
-     fn read_double() -> f64 {
-          0.
-     }
-
-     fn read_double_le() -> f64 {
+     fn read_double(&self) -> f64 {
           0.0
      }
 
-     fn read_long() -> usize {
+     fn read_double_le(&self) -> f64 {
+          0.0
+     }
+
+     fn read_long(&self) -> usize {
           0
      }
 
-     fn read_long_le() -> usize {
+     fn read_long_le(&self) -> usize {
           0
      }
 
-     fn read_var_int() -> usize {
+     fn read_var_int(&self) -> usize {
           0
      }
 
-     fn read_signed_var_int() -> usize {
+     fn read_signed_var_int(&self) -> usize {
           0
      }
 
-     fn read_var_long() -> usize {
+     fn read_var_long(&self) -> usize {
           0
      }
 
-     fn read_signed_var_long() -> usize {
+     fn read_signed_var_long(&self) -> usize {
           0
      }
 }
