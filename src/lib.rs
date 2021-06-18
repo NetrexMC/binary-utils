@@ -41,6 +41,7 @@ impl BinaryStream {
      /// Allocates more bytes to the binary stream.
      fn allocate(&self, bytes: usize) {
           self.bounds.1 = self.buffer.len() + bytes;
+          self.buffer.resize(self.bounds.1, 0)
      }
 
      /// Create a new Binary Stream from a vector of bytes.
@@ -62,20 +63,54 @@ impl BinaryStream {
      ///
      ///     let stream = BinaryStream::new(vec!(([98,105,110,97,114,121,32,117,116,105,108,115]));
      ///     let shareable_stream = stream.clamp(7); // 32,117,116,105,108,115 are now the only bytes readable externally
-     fn clamp(&self, once: usize) -> Self {
+     fn clamp(&self, offset: usize) -> Self {
           // makes sure that the bound is still possible
-          if once < 0 {
+          if offset < 0 {
                panic!("Bounds not possible");
           } else {
-               self.bounds.0 = once;
+               self.bounds.0 = offset;
                *self // Dereferrenced for use by consumer.
           }
      }
+
+     /// Checks whether or not the given offset is in between the streams bounds and if the offset is valid.
+     fn is_within_bounds(&self, offset: usize) -> bool {
+          !(offset > self.bounds.1 || offset < self.bounds.0 || offset > self.buffer.len())
+     }
+
+     /// Reads a byte, updates the offset, clamps to last offset.
+     fn read(&self) -> u8 {
+          let byte = self[self.offset];
+          self.clamp(self.offset);
+          self.increase_offset(None);
+          byte
+     }
 }
 
-// impl std::ops::Index<usize> for BinaryStream {
+impl std::ops::Index<usize> for BinaryStream {
+     type Output = u8;
+     fn index(&self, idx: usize) -> &u8 {
+          if self.is_within_bounds(idx) {
+               if self.bounds.0 == 0 && self.bounds.1 == self.buffer.len() {
+                    panic!("Index is out of bounds due to clamp.");
+               } else {
+                    panic!("Index is out of bounds.");
+               }
+          }
 
-// }
+          self.buffer.get(idx).unwrap()
+     }
+}
+
+impl std::ops::IndexMut<usize> for BinaryStream {
+     fn index_mut(&mut self, offset: usize) -> &mut u8 {
+          if self.is_within_bounds(offset) {
+               self.buffer.get(offset).as_mut().unwrap()
+          } else {
+               panic!("Offset: {} is out of bounds.", offset);
+          }
+     }
+}
 
 impl buffer::IBufferRead for BinaryStream {
      fn read_byte(&self) -> u8 {
