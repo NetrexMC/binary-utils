@@ -49,6 +49,7 @@ pub trait IBufferWrite {
      fn write_signed_var_int(&mut self, v: isize);
      fn write_var_long(&mut self, v: isize);
      fn write_signed_var_long(&mut self, v: isize);
+     fn write_string(&mut self, v: String);
 }
 
 
