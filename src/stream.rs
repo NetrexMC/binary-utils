@@ -1,9 +1,68 @@
 use std::convert::TryInto;
 use std::string::FromUtf8Error;
 use std::ops::{ Range, Index, IndexMut };
+use std::error::Error;
+use std::fmt::{ Display, Formatter, Result as FResult };
 
 use super::buffer;
 
+// Errors for binarystream
+pub struct AllocationError;
+
+#[derive(Debug)]
+pub struct IllegalOffsetError {
+     legal: usize,
+     actual: usize,
+     cause_bounds: bool
+}
+
+#[derive(Debug)]
+pub enum ClampErrorCause {
+     AboveBounds,
+     BelowBounds,
+     InvalidBounds
+}
+
+#[derive(Debug)]
+pub struct ClampError {
+     cause: ClampErrorCause
+}
+
+impl ClampError {
+     fn new(cause: ClampErrorCause) -> Self {
+          Self {
+               cause
+          }
+     }
+}
+
+impl Display for AllocationError {
+     fn fmt(&self, f: &mut Formatter) -> FResult {
+          write!(f, "Attempted to allocate negative bytes.")
+     }
+}
+
+impl Display for IllegalOffsetError {
+     fn fmt(&self, f: &mut Formatter) -> FResult {
+          if self.cause_bounds {
+               write!(f, "Offset: {} is outside of the BinaryStream's bounds", self.actual)
+          } else {
+               write!(f, "Offset: {} is outside of possible offset of: {}", self.actual, self.cause_bounds)
+          }
+     }
+}
+
+impl Display for ClampError {
+     fn fmt(&self, f: &mut Formatter) -> FResult {
+          match self.cause {
+               ClampErrorCause::AboveBounds => write!(f, "Clamp start can not be bigger than the buffer's length."),
+               ClampErrorCause::BelowBounds => write!(f, "Clamp end is less than the start length."),
+               ClampErrorCause::InvalidBounds => write!(f, "Clamp start or end is mismatched.")
+          }
+     }
+}
+
+#[derive(Debug)]
 pub struct BinaryStream {
      buffer: Vec<u8>,
      offset: usize,
@@ -19,7 +78,11 @@ impl BinaryStream {
           };
 
           if (self.offset + amnt) > self.bounds.1 {
-               panic!("Offset outside buffer.");
+               panic!(IllegalOffsetError {
+                    actual: amnt,
+                    legal: self.bounds.1,
+                    cause_bounds: true
+               })
           }
 
           self.offset = self.offset + amnt;
@@ -57,6 +120,14 @@ impl BinaryStream {
           self.buffer.resize(self.bounds.1, 0)
      }
 
+     /// Allocates more bytes to the binary stream only **if** the given bytelength will exceed
+     /// the current binarystream's bounds.
+     fn allocate_if(&mut self, bytes: usize) {
+          if (self.buffer.len() + bytes > self.bounds.1) && (self.offset + bytes) >= self.bounds.1 {
+               self.allocate(bytes)
+          }
+     }
+
      /// Create a new Binary Stream from a vector of bytes.
      fn new(buf: &Vec<u8>) -> Self {
           Self {
@@ -75,15 +146,24 @@ impl BinaryStream {
      /// **Example:**
      ///
      ///     let stream = BinaryStream::new(vec!(([98,105,110,97,114,121,32,117,116,105,108,115]));
-     ///     let shareable_stream = stream.clamp(7); // 32,117,116,105,108,115 are now the only bytes readable externally
-     fn clamp(&mut self, offset: usize) -> Self {
-          // makes sure that the bound is still possible
-          if offset > self.buffer.len() {
-               panic!("Bounds not possible");
-          } else {
-               self.bounds.0 = offset;
-               BinaryStream::new(&mut self.buffer.clone()) // Dereferrenced for use by consumer.
+     ///     let shareable_stream = stream.clamp(7, None); // 32,117,116,105,108,115 are now the only bytes readable externally
+     fn clamp(&mut self, start: usize, end: Option<usize>) -> Self {
+          if start > self.buffer.len() {
+               panic!(ClampError::new(ClampErrorCause::AboveBounds));
+          } else if start < self.bounds.0 {
+               panic!(ClampError::new(ClampErrorCause::BelowBounds));
           }
+
+          self.bounds.0 = start;
+
+          if match end { None => false, _ => true} {
+               if end.unwrap() < self.bounds.0 {
+                    panic!(ClampError::new(ClampErrorCause::InvalidBounds));
+               }
+               self.bounds.1 = end.unwrap();
+          }
+
+          BinaryStream::new(&mut self.buffer.clone()) // Dereferrenced for use by consumer.
      }
 
      /// Checks whether or not the given offset is in between the streams bounds and if the offset is valid.
@@ -112,9 +192,21 @@ impl BinaryStream {
      ///      }
      fn read(&mut self) -> u8 {
           let byte = self[self.offset];
-          self.clamp(self.offset);
+          self.clamp(self.offset, None);
           self.increase_offset(None);
           byte
+     }
+
+     /// Writes a byte ands returns it.
+     fn write_usize(&mut self, v: usize) -> usize {
+          self.allocate_if(1);
+          self.buffer.push(v as u8);
+          v
+     }
+
+     fn write_slice(&mut self, v: &[u8]) {
+          self.allocate_if(v.len());
+          self.buffer.extend_from_slice(v);
      }
 }
 
@@ -301,5 +393,95 @@ impl buffer::IBufferRead for BinaryStream {
 
      fn read_signed_var_long(&mut self) -> isize {
           0
+     }
+}
+
+impl buffer::IBufferWrite for BinaryStream {
+     fn write_byte(&mut self, v: u16) {
+
+     }
+
+     fn write_signed_byte(&mut self, v: i16) {
+
+     }
+
+     fn write_bool(&mut self, v: bool) {
+
+     }
+
+     fn write_short(&mut self, v: u16) {
+
+     }
+
+     fn write_signed_short(&mut self, v: i16) {
+
+     }
+
+     fn write_short_le(&mut self, v: u16) {
+
+     }
+
+     fn write_signed_short_le(&mut self, v: i16) {
+
+     }
+
+     fn write_triad(&mut self, v: usize) {
+
+     }
+
+     fn write_triad_le(&mut self, v: usize) {
+
+     }
+
+     fn write_int(&mut self, v: i16) {
+
+     }
+
+     fn write_int_le(&mut self, v: i16) {
+
+     }
+
+     fn write_float(&mut self, v: f32) {
+
+     }
+
+     fn write_float_le(&mut self, v: f32) {
+
+     }
+
+     fn write_double(&mut self, v: f64) {
+
+     }
+
+     fn write_double_le(&mut self, v: f64) {
+
+     }
+
+     fn write_long(&mut self, v: i64) {
+
+     }
+
+     fn write_long_le(&mut self, v: i64) {
+
+     }
+
+     fn write_var_int(&mut self, v: isize) {
+
+     }
+
+     fn write_signed_var_int(&mut self, v: isize) {
+
+     }
+
+     fn write_var_long(&mut self, v: isize) {
+
+     }
+
+     fn write_signed_var_long(&mut self, v: isize) {
+
+     }
+
+     fn write_string(&mut self, v: String) {
+
      }
 }
