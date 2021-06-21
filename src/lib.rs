@@ -2,7 +2,5 @@
 pub mod buffer;
 pub mod stream;
 
-pub use self::{
-     buffer::*,
-     stream::*
-};
+pub use buffer::*;
+pub use stream::*;
