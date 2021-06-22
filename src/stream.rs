@@ -92,8 +92,11 @@ pub trait IBinaryStream {
      /// the current binarystream's bounds.
      fn allocate_if(&mut self, bytes: usize);
 
+     /// Create a new Binary Stream from nothing.
+     fn new() -> Self;
+
      /// Create a new Binary Stream from a vector of bytes.
-     fn new(buf: &Vec<u8>) -> Self;
+     fn init(buf: &Vec<u8>) -> Self;
 
      /// Similar to slice, clamp, "grips" the buffer from a given offset, and changes the initial bounds.
      /// Meaning that any previous bytes before the given bounds are no longer writable.
@@ -181,6 +184,10 @@ impl IBinaryStream for BinaryStream {
           self.offset
      }
 
+     fn get_length(&self) -> usize {
+          self.buffer.len() as usize
+     }
+
      fn allocate(&mut self, bytes: usize) {
           self.bounds.1 = self.buffer.len() + bytes;
           self.buffer.resize(self.bounds.1, 0)
@@ -192,7 +199,15 @@ impl IBinaryStream for BinaryStream {
           }
      }
 
-     fn new(buf: &Vec<u8>) -> Self {
+     fn new() -> Self {
+          Self {
+               buffer: Vec::new(),
+               bounds: (0, 0),
+               offset: 0
+          }
+     }
+
+     fn init(buf: &Vec<u8>) -> Self {
           Self {
                buffer: buf.clone(),
                bounds: (0, buf.len()),
@@ -216,7 +231,7 @@ impl IBinaryStream for BinaryStream {
                self.bounds.1 = end.unwrap();
           }
 
-          BinaryStream::new(&mut self.buffer.clone()) // Dereferrenced for use by consumer.
+          BinaryStream::init(&mut self.buffer.clone()) // Dereferrenced for use by consumer.
      }
 
      fn is_within_bounds(&self, offset: usize) -> bool {
@@ -239,10 +254,6 @@ impl IBinaryStream for BinaryStream {
      fn write_slice(&mut self, v: &[u8]) {
           self.allocate_if(v.len());
           self.buffer.extend_from_slice(v);
-     }
-
-     fn get_length(&self) -> usize {
-          self.buffer.len() as usize
      }
 }
 
