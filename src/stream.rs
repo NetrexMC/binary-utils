@@ -73,6 +73,9 @@ pub trait IBinaryStream {
      /// Returns the current offset at the given time when called.
      fn get_offset(&mut self) -> usize;
 
+     /// Returns the length of the current buffer.
+     fn get_length(&self) -> usize;
+
      /// Allocates more bytes to the binary stream.
      /// Allocations can occur as many times as desired, however a negative allocation will cause
      /// the stream to "drop" or "delete" bytes from the buffer. Discarded bytes are not recoverable.
@@ -131,6 +134,11 @@ pub trait IBinaryStream {
      /// Writes a byte ands returns it.
      fn write_usize(&mut self, v: usize) -> usize;
 
+     /// Writes a slice onto the Binary Stream and automatically allocates
+     /// memory for the slice.
+     ///
+     /// **Example:**
+     ///     stream.write_slice(&[0, 38, 92, 10]);
      fn write_slice(&mut self, v: &[u8]);
 }
 
@@ -231,6 +239,10 @@ impl IBinaryStream for BinaryStream {
      fn write_slice(&mut self, v: &[u8]) {
           self.allocate_if(v.len());
           self.buffer.extend_from_slice(v);
+     }
+
+     fn get_length(&self) -> usize {
+          self.buffer.len() as usize
      }
 }
 
