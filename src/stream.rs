@@ -386,13 +386,15 @@ impl buffer::IBufferRead for BinaryStream {
 
      fn read_triad(&mut self) -> usize {
           // a triad is 3 bytes
-          // let b = u32::from_be_bytes(self[self.offset..self.offset + 3].try_into().unwrap());
-          // b
-          0
+          let b = u32::from_be_bytes(self[self.offset..self.offset + 3].try_into().unwrap());
+          self.increase_offset(Some(3));
+          b as usize
      }
 
      fn read_triad_le(&mut self) -> usize {
-          0
+          let b = u32::from_le_bytes(self[self.offset..self.offset + 3].try_into().unwrap());
+          self.increase_offset(Some(3));
+          b as usize
      }
 
      fn read_int(&mut self) -> i16 {
@@ -470,83 +472,89 @@ impl buffer::IBufferRead for BinaryStream {
 
 impl buffer::IBufferWrite for BinaryStream {
      fn write_byte(&mut self, v: u16) {
-
+          self.write_slice(&v.to_be_bytes())
      }
 
      fn write_signed_byte(&mut self, v: i16) {
-
+          self.write_slice(&v.to_be_bytes())
      }
 
      fn write_bool(&mut self, v: bool) {
-
+          let byte = match v {
+               true => 1,
+               false => 0
+          };
+          self.write_byte(byte);
      }
 
      fn write_short(&mut self, v: u16) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_signed_short(&mut self, v: i16) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_short_le(&mut self, v: u16) {
-
+          self.write_slice(&v.to_le_bytes());
      }
 
      fn write_signed_short_le(&mut self, v: i16) {
-
+          self.write_slice(&v.to_le_bytes());
      }
 
      fn write_triad(&mut self, v: usize) {
-
+          let bytes = &v.to_be_bytes()[1..4];
+          self.write_slice(bytes);
      }
 
      fn write_triad_le(&mut self, v: usize) {
-
+          let bytes = &v.to_le_bytes()[1..4];
+          self.write_slice(bytes);
      }
 
      fn write_int(&mut self, v: i16) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_int_le(&mut self, v: i16) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_float(&mut self, v: f32) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_float_le(&mut self, v: f32) {
-
+          self.write_slice(&v.to_le_bytes());
      }
 
      fn write_double(&mut self, v: f64) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_double_le(&mut self, v: f64) {
-
+          self.write_slice(&v.to_le_bytes());
      }
 
      fn write_long(&mut self, v: i64) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_long_le(&mut self, v: i64) {
-
+          self.write_slice(&v.to_le_bytes());
      }
 
      fn write_var_int(&mut self, v: isize) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_signed_var_int(&mut self, v: isize) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_var_long(&mut self, v: isize) {
-
+          self.write_slice(&v.to_be_bytes());
      }
 
      fn write_signed_var_long(&mut self, v: isize) {
@@ -554,6 +562,7 @@ impl buffer::IBufferWrite for BinaryStream {
      }
 
      fn write_string(&mut self, v: String) {
-
+          self.write_short(v.len() as u16);
+          self.write_slice(v.as_bytes());
      }
 }
