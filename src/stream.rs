@@ -142,7 +142,6 @@ pub struct BinaryStream {
 }
 
 impl IBinaryStream for BinaryStream {
-     /// Increases the offset. If `None` is given in `amount`, 1 will be used.
      fn increase_offset(&mut self, amount: Option<usize>) -> usize {
           let amnt = match amount {
                None => 1 as usize,
@@ -161,8 +160,6 @@ impl IBinaryStream for BinaryStream {
           self.offset
      }
 
-     /// Changes the offset of the stream to the new given offset.
-     /// returns `true` if the offset is in bounds and `false` if the offset is out of bounds.
      fn set_offset(&mut self, offset: usize) -> bool {
           if offset > self.bounds.1 {
                false
@@ -172,35 +169,21 @@ impl IBinaryStream for BinaryStream {
           }
      }
 
-     /// Returns the current offset at the given time when called.
      fn get_offset(&mut self) -> usize {
           self.offset
      }
 
-     /// Allocates more bytes to the binary stream.
-     /// Allocations can occur as many times as desired, however a negative allocation will cause
-     /// the stream to "drop" or "delete" bytes from the buffer. Discarded bytes are not recoverable.
-     ///
-     /// Useful when writing to a stream, allows for allocating for chunks, etc.
-     ///
-     /// **Example:**
-     ///
-     ///     stream.allocate(1024);
-     ///     stream.write_string(String::from("a random string, that can only be a max of 1024 bytes."));
      fn allocate(&mut self, bytes: usize) {
           self.bounds.1 = self.buffer.len() + bytes;
           self.buffer.resize(self.bounds.1, 0)
      }
 
-     /// Allocates more bytes to the binary stream only **if** the given bytelength will exceed
-     /// the current binarystream's bounds.
      fn allocate_if(&mut self, bytes: usize) {
           if (self.buffer.len() + bytes > self.bounds.1) && (self.offset + bytes) >= self.bounds.1 {
                self.allocate(bytes)
           }
      }
 
-     /// Create a new Binary Stream from a vector of bytes.
      fn new(buf: &Vec<u8>) -> Self {
           Self {
                buffer: buf.clone(),
@@ -209,16 +192,6 @@ impl IBinaryStream for BinaryStream {
           }
      }
 
-     /// Similar to slice, clamp, "grips" the buffer from a given offset, and changes the initial bounds.
-     /// Meaning that any previous bytes before the given bounds are no longer writable.
-     ///
-     /// Useful for cloning "part" of a stream, and only allowing certain "bytes" to be read.
-     /// Clamps can not be undone.
-     ///
-     /// **Example:**
-     ///
-     ///     let stream = BinaryStream::new(vec!(([98,105,110,97,114,121,32,117,116,105,108,115]));
-     ///     let shareable_stream = stream.clamp(7, None); // 32,117,116,105,108,115 are now the only bytes readable externally
      fn clamp(&mut self, start: usize, end: Option<usize>) -> Self {
           if start > self.buffer.len() {
                panic!(ClampError::new(ClampErrorCause::AboveBounds));
@@ -238,30 +211,10 @@ impl IBinaryStream for BinaryStream {
           BinaryStream::new(&mut self.buffer.clone()) // Dereferrenced for use by consumer.
      }
 
-     /// Checks whether or not the given offset is in between the streams bounds and if the offset is valid.
-     ///
-     /// **Example:**
-     ///
-     ///     if stream.is_within_bounds(100) {
-     ///       println!("Can write to offset: 100");
-     ///     } else {
-     ///       println!("100 is out of bounds.");
-     ///     }
      fn is_within_bounds(&self, offset: usize) -> bool {
           !(offset > self.bounds.1 || offset < self.bounds.0 || offset > self.buffer.len())
      }
 
-     /// Reads a byte, updates the offset, clamps to last offset.
-     ///
-     /// **Example:**
-     ///
-     ///      let mut fbytes = Vec::new();
-     ///      loop {
-     ///         if fbytes.len() < 4 {
-     ///           fbytes.push(stream.read());
-     ///         }
-     ///         break;
-     ///      }
      fn read(&mut self) -> u8 {
           let byte = self[self.offset];
           self.clamp(self.offset, None);
@@ -269,7 +222,6 @@ impl IBinaryStream for BinaryStream {
           byte
      }
 
-     /// Writes a byte ands returns it.
      fn write_usize(&mut self, v: usize) -> usize {
           self.allocate_if(1);
           self.buffer.push(v as u8);
