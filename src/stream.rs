@@ -76,6 +76,9 @@ pub trait IBinaryStream {
      /// Returns the length of the current buffer.
      fn get_length(&self) -> usize;
 
+     /// Returns the current buffer as a clone of the original.
+     fn get_buffer(&self) -> Vec<u8>;
+
      /// Allocates more bytes to the binary stream.
      /// Allocations can occur as many times as desired, however a negative allocation will cause
      /// the stream to "drop" or "delete" bytes from the buffer. Discarded bytes are not recoverable.
@@ -193,6 +196,10 @@ impl IBinaryStream for BinaryStream {
 
      fn get_length(&self) -> usize {
           self.buffer.len() as usize
+     }
+
+     fn get_buffer(&self) -> Vec<u8> {
+          self.buffer.clone()
      }
 
      fn allocate(&mut self, bytes: usize) {
