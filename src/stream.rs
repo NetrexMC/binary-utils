@@ -137,6 +137,13 @@ pub trait IBinaryStream {
      /// Writes a byte ands returns it.
      fn write_usize(&mut self, v: usize) -> usize;
 
+     /// Reads a slice from the Binary Stream and automatically updates
+     /// the offset for the given slice's length.
+     ///
+     /// **Example:**
+     ///     stream.read_slice();
+     fn read_slice(&mut self, length: Option<usize>) -> Vec<u8>;
+
      /// Writes a slice onto the Binary Stream and automatically allocates
      /// memory for the slice.
      ///
@@ -254,6 +261,15 @@ impl IBinaryStream for BinaryStream {
      fn write_slice(&mut self, v: &[u8]) {
           self.allocate_if(v.len());
           self.buffer.extend_from_slice(v);
+     }
+
+     fn read_slice(&mut self, length: Option<usize>) -> Vec<u8> {
+          let len = match length {
+               Some(v) => v,
+               None => 1
+          };
+
+          self[self.offset..len].to_vec()
      }
 }
 
