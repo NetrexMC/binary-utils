@@ -221,7 +221,7 @@ impl IBinaryStream for BinaryStream {
      ///     stream.write_string(String::from("a random string, that can only be a max of 1024 bytes."));
      fn allocate(&mut self, bytes: usize) {
           self.bounds.1 = self.buffer.len() + bytes;
-          self.buffer.resize(self.bounds.1, 0)
+          // self.buffer.resize(self.bounds.1, 0)
      }
 
      /// Allocates more bytes to the binary stream only **if** the given bytelength will exceed
@@ -535,6 +535,7 @@ impl buffer::IBufferRead for BinaryStream {
 
 impl buffer::IBufferWrite for BinaryStream {
      fn write_byte(&mut self, v: u8) {
+          self.write_usize(v)
           self.write_slice(&v.to_be_bytes())
      }
 
