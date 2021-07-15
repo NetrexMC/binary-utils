@@ -3,6 +3,7 @@ use std::string::FromUtf8Error;
 use std::ops::{ Range, Index, IndexMut };
 use std::error::Error;
 use std::fmt::{ Display, Formatter, Result as FResult };
+use std::mem;
 
 use super::buffer;
 
@@ -396,17 +397,16 @@ impl std::ops::IndexMut<usize> for BinaryStream {
 
 impl buffer::IBufferRead for BinaryStream {
      /// Literally, reads a byte
-     fn read_byte(&mut self) -> u16 {
-          let idx = self.offset;
-          let unt = self.offset + 2;
-          let byte = u16::from_be_bytes(self.buffer[idx..unt].try_into().unwrap());
-          self.increase_offset(Some(2));
+     fn read_byte(&mut self) -> u8 {
+          let byte = self[0];
+          self.increase_offset(None);
           byte
      }
 
-     fn read_signed_byte(&mut self) -> i16 {
-          let b = i16::from_be_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
-          self.increase_offset(Some(2));
+     fn read_signed_byte(&mut self) -> i8 {
+          // an i8 is only 1 byte
+          let b = i8::from_be_bytes(self.buffer[self.offset..self.offset + 1].try_into().unwrap());
+          self.increase_offset(Some(1));
           b
      }
 
@@ -423,12 +423,15 @@ impl buffer::IBufferRead for BinaryStream {
 
      fn read_short(&mut self) -> u16 {
           // a short is 2 bytes and is a u16,
-          // this is essentially just "read_byte"
-          self.read_byte()
+          let b = u16::from_be_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
+          self.increase_offset(Some(2));
+          b
      }
 
      fn read_signed_short(&mut self) -> i16 {
-          self.read_signed_byte()
+          let b = i16::from_be_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
+          self.increase_offset(Some(2));
+          b
      }
 
      fn read_short_le(&mut self) -> u16 {
@@ -445,13 +448,13 @@ impl buffer::IBufferRead for BinaryStream {
 
      fn read_triad(&mut self) -> usize {
           // a triad is 3 bytes
-          let b = u32::from_be_bytes(self[self.offset..self.offset + 3].try_into().unwrap());
+          let b = u32::from_be_bytes(self[self.offset..self.offset + 4].try_into().unwrap());
           self.increase_offset(Some(3));
           b as usize
      }
 
      fn read_triad_le(&mut self) -> usize {
-          let b = u32::from_le_bytes(self[self.offset..self.offset + 3].try_into().unwrap());
+          let b = u32::from_le_bytes(self[self.offset..self.offset + 4].try_into().unwrap());
           self.increase_offset(Some(3));
           b as usize
      }
@@ -466,47 +469,47 @@ impl buffer::IBufferRead for BinaryStream {
      }
 
      fn read_float(&mut self) -> f32 {
-          let b = f32::from_be_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
-          self.increase_offset(Some(2));
+          let b = f32::from_be_bytes(self.buffer[self.offset..self.offset + 4].try_into().unwrap());
+          self.increase_offset(Some(4));
           b
      }
 
      fn read_float_le(&mut self) -> f32 {
-          let b = f32::from_le_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
-          self.increase_offset(Some(2));
+          let b = f32::from_le_bytes(self.buffer[self.offset..self.offset + 4].try_into().unwrap());
+          self.increase_offset(Some(4));
           b
      }
 
      fn read_double(&mut self) -> f64 {
-          let b = f64::from_be_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
-          self.increase_offset(Some(2));
+          let b = f64::from_be_bytes(self.buffer[self.offset..self.offset + 8].try_into().unwrap());
+          self.increase_offset(Some(8));
           b
      }
 
      fn read_double_le(&mut self) -> f64 {
-          let b = f64::from_le_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
-          self.increase_offset(Some(2));
+          let b = f64::from_le_bytes(self.buffer[self.offset..self.offset + 8].try_into().unwrap());
+          self.increase_offset(Some(8));
           b
      }
 
      fn read_long(&mut self) -> i64 {
-          let b = i64::from_be_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
-          self.increase_offset(Some(2));
+          let b = i64::from_be_bytes(self.buffer[self.offset..self.offset + 8].try_into().unwrap());
+          self.increase_offset(Some(8));
           b
      }
 
      fn read_long_le(&mut self) -> i64 {
-          let b = i64::from_le_bytes(self.buffer[self.offset..self.offset + 2].try_into().unwrap());
-          self.increase_offset(Some(2));
+          let b = i64::from_le_bytes(self.buffer[self.offset..self.offset + 8].try_into().unwrap());
+          self.increase_offset(Some(8));
           b
      }
 
      fn read_var_int(&mut self) -> isize {
           // taken from pmmp, this might be messed up
-          let mut b: i16 = 0;
+          let mut b: u16 = 0;
           let mut i = 0;
           while i <= 28 {
-               let byte = self.read_signed_byte();
+               let byte: u16 = self.read_signed_byte().try_into().unwrap();
                b |= (byte & 0x7f) << i;
                if (byte & 0x80) == 0 {
                     return b as isize
@@ -530,11 +533,11 @@ impl buffer::IBufferRead for BinaryStream {
 }
 
 impl buffer::IBufferWrite for BinaryStream {
-     fn write_byte(&mut self, v: u16) {
+     fn write_byte(&mut self, v: u8) {
           self.write_slice(&v.to_be_bytes())
      }
 
-     fn write_signed_byte(&mut self, v: i16) {
+     fn write_signed_byte(&mut self, v: i8) {
           self.write_slice(&v.to_be_bytes())
      }
 
@@ -616,7 +619,7 @@ impl buffer::IBufferWrite for BinaryStream {
           self.write_slice(&v.to_be_bytes());
      }
 
-     fn write_signed_var_long(&mut self, v: isize) {
+     fn write_signed_var_long(&mut self, _v: isize) {
 
      }
 
