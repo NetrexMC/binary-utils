@@ -535,7 +535,6 @@ impl buffer::IBufferRead for BinaryStream {
 
 impl buffer::IBufferWrite for BinaryStream {
      fn write_byte(&mut self, v: u8) {
-          self.write_usize(v)
           self.write_slice(&v.to_be_bytes())
      }
 
