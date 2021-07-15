@@ -20,8 +20,10 @@ pub trait IBufferRead {
      fn read_float_le(&mut self) -> f32;
      fn read_double(&mut self) -> f64;
      fn read_double_le(&mut self) -> f64;
-     fn read_long(&mut self) -> i64;
-     fn read_long_le(&mut self) -> i64;
+     fn read_long(&mut self) -> u64;
+     fn read_signed_long(&mut self) -> i64;
+     fn read_long_le(&mut self) -> u64;
+     fn read_signed_long_le(&mut self) -> i64;
      fn read_var_int(&mut self) -> isize;
      fn read_signed_var_int(&mut self) -> isize;
      fn read_var_long(&mut self) -> isize;
@@ -45,8 +47,10 @@ pub trait IBufferWrite {
      fn write_float_le(&mut self, v: f32);
      fn write_double(&mut self, v: f64);
      fn write_double_le(&mut self, v: f64);
-     fn write_long(&mut self, v: i64);
-     fn write_long_le(&mut self, v: i64);
+     fn write_long(&mut self, v: u64);
+     fn write_signed_long(&mut self, v: i64);
+     fn write_long_le(&mut self, v: u64);
+     fn write_signed_long_le(&mut self, v: i64);
      fn write_var_int(&mut self, v: isize);
      fn write_signed_var_int(&mut self, v: isize);
      fn write_var_long(&mut self, v: isize);
