@@ -337,8 +337,9 @@ impl IBinaryStream for BinaryStream {
                Some(v) => v,
                None => 1
           };
+          let vec = self[self.offset..len].to_vec();
           self.increase_offset(Some(len));
-          self[self.offset..len].to_vec()
+          vec
      }
 }
 
