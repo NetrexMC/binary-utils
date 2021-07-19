@@ -1,6 +1,6 @@
 [package]
 name = "binary_utils"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Bavfalcon9 <olybear9@gmail.com>"]
 edition = "2018"
 include = ["src/**/*", "README.md"]
