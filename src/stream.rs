@@ -406,7 +406,7 @@ impl buffer::IBufferRead for BinaryStream {
      }
 
      fn read_byte(&mut self) -> u8 {
-          let byte = self[0];
+          let byte = self.buffer[self.offset];
           self.increase_offset(None);
           byte
      }
