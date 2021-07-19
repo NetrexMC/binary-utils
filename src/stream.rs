@@ -148,6 +148,15 @@ pub trait IBinaryStream {
      ///     stream.read_slice();
      fn read_slice(&mut self, length: Option<usize>) -> Vec<u8>;
 
+     /// Reads a slice from the Binary Stream and automatically updates
+     /// the offset for the given slice's length.
+     ///
+     /// ! This function indexes from 0 always!
+     ///
+     /// **Example:**
+     ///     stream.read_slice();
+     fn read_slice_exact(&mut self, length: Option<usize>) -> Vec<u8>;
+
      /// Writes a slice onto the Binary Stream and automatically allocates
      /// memory for the slice.
      ///
@@ -332,12 +341,27 @@ impl IBinaryStream for BinaryStream {
      ///
      /// **Example:**
      ///     stream.read_slice();
-     fn read_slice(&mut self, length: Option<usize>) -> Vec<u8> {
+     fn read_slice_exact(&mut self, length: Option<usize>) -> Vec<u8> {
           let len = match length {
                Some(v) => v,
                None => 1
           };
           let vec = self[self.offset..len].to_vec();
+          self.increase_offset(Some(len));
+          vec
+     }
+
+     /// Reads a slice from the Binary Stream and automatically updates
+     /// the offset for the given slice's length.
+     ///
+     /// **Example:**
+     ///     stream.read_slice();
+     fn read_slice(&mut self, length: Option<usize>) -> Vec<u8> {
+          let len = match length {
+               Some(v) => v,
+               None => 1
+          };
+          let vec = self[self.offset..len + self.offset].to_vec();
           self.increase_offset(Some(len));
           vec
      }

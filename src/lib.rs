@@ -35,4 +35,12 @@ mod tests {
           let is_ten = stream.read_byte();
           assert_eq!(is_ten, 10);
      }
+
+     #[test]
+     fn read_slice_panic() {
+          let raw = vec![7, 0, 255, 255, 0, 254, 254, 254, 254, 253, 253, 253, 253, 18, 52, 86, 120, 4, 128, 255, 255, 254, 74, 188, 2, 65, 140, 131, 72, 201, 65, 219, 142, 52];
+          let mut stream = stream::BinaryStream::init(&raw);
+          stream.read_byte();
+          assert_eq!([0, 255, 255, 0].to_vec(), stream.read_slice(Some(4)));
+     }
 }
