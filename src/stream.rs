@@ -398,14 +398,14 @@ impl std::ops::IndexMut<usize> for BinaryStream {
 
 impl buffer::IBufferRead for BinaryStream {
      /// Literally, reads a byte
-     fn read_byte(&mut self) -> i8 {
+     fn read_ibyte(&mut self) -> i8 {
           // an i8 is only 1 byte
           let b = i8::from_be_bytes(self.buffer[self.offset..self.offset + 1].try_into().unwrap());
           self.increase_offset(Some(1));
           b
      }
 
-     fn read_ubyte(&mut self) -> u8 {
+     fn read_byte(&mut self) -> u8 {
           let byte = self[0];
           self.increase_offset(None);
           byte
@@ -546,11 +546,11 @@ impl buffer::IBufferRead for BinaryStream {
 }
 
 impl buffer::IBufferWrite for BinaryStream {
-     fn write_byte(&mut self, v: i8) {
+     fn write_ibyte(&mut self, v: i8) {
           self.write_slice(&v.to_be_bytes())
      }
 
-     fn write_ubyte(&mut self, v: u8) {
+     fn write_byte(&mut self, v: u8) {
           self.write_slice(&v.to_be_bytes())
      }
 

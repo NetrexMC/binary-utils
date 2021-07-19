@@ -3,8 +3,8 @@ use std::convert::TryInto;
 use std::string::FromUtf8Error;
 
 pub trait IBufferRead {
-     fn read_byte(&mut self) -> i8;
-     fn read_ubyte(&mut self) -> u8;
+     fn read_byte(&mut self) -> u8;
+     fn read_ibyte(&mut self) -> i8;
      fn read_bool(&mut self) -> bool;
      fn read_short(&mut self) -> i16;
      fn read_ushort(&mut self) -> u16;
@@ -32,8 +32,8 @@ pub trait IBufferRead {
 }
 
 pub trait IBufferWrite {
-     fn write_byte(&mut self, v: i8);
-     fn write_ubyte(&mut self, v: u8);
+     fn write_byte(&mut self, v: u8);
+     fn write_ibyte(&mut self, v: i8);
      fn write_bool(&mut self, v: bool);
      fn write_short(&mut self, v: i16);
      fn write_ushort(&mut self, v: u16);
