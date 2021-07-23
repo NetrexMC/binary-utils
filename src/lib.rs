@@ -43,4 +43,14 @@ mod tests {
           stream.read_byte();
           assert_eq!([0, 255, 255, 0].to_vec(), stream.read_slice(Some(4)));
      }
+
+     #[test]
+     fn test_read_int() {
+          let buf = [ 233, 9, 27, 10 ];
+          // we need to read the first three bytes
+          let mut bin = stream::BinaryStream::init(&buf.to_vec());
+          let num = bin.read_triad();
+
+          assert_eq!(1772009, num);
+     }
 }

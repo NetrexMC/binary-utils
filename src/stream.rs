@@ -5,6 +5,7 @@ use std::error::Error;
 use std::fmt::{ Display, Formatter, Result as FResult };
 use std::mem;
 
+use crate::is_u24;
 use super::buffer;
 
 // Errors for binarystream
@@ -471,17 +472,18 @@ impl buffer::IBufferRead for BinaryStream {
           b
      }
 
-     fn read_triad(&mut self) -> usize {
+     fn read_triad(&mut self) -> u32 {
           // a triad is 3 bytes
-          let b = u32::from_be_bytes(self[self.offset..self.offset + 4].try_into().unwrap());
-          self.increase_offset(Some(3));
-          b as usize
+          // we read three bytes here, but don't increase the offest
+          let bytes = [self.read_byte(), self.read_byte(), self.read_byte(), 0];
+          let b = u32::from_le_bytes(bytes);
+          b
      }
 
-     fn read_triad_le(&mut self) -> usize {
-          let b = u32::from_le_bytes(self[self.offset..self.offset + 4].try_into().unwrap());
-          self.increase_offset(Some(3));
-          b as usize
+     fn read_triad_be(&mut self) -> u32 {
+          let bytes = [self.read_byte(), self.read_byte(), self.read_byte(), 0];
+          let b = u32::from_be_bytes(bytes);
+          b
      }
 
      fn read_int(&mut self) -> i16 {
@@ -602,13 +604,19 @@ impl buffer::IBufferWrite for BinaryStream {
           self.write_slice(&v.to_le_bytes());
      }
 
-     fn write_triad(&mut self, v: usize) {
-          let bytes = &v.to_be_bytes()[1..4];
+     fn write_triad(&mut self, v: u32) {
+          // this is actually a hack fix!
+          // we're actually writing a u24 here
+          // we don't care about the last byte, so we need to check if its within range.
+          if !is_u24(v) {
+               panic!("Value is outside of 3 byte range!");
+          }
+          let bytes = &v.to_be_bytes()[1..3];
           self.write_slice(bytes);
      }
 
-     fn write_triad_le(&mut self, v: usize) {
-          let bytes = &v.to_le_bytes()[1..4];
+     fn write_triad_le(&mut self, v: u32) {
+          let bytes = &v.to_le_bytes()[1..3];
           self.write_slice(bytes);
      }
 
