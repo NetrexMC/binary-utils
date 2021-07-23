@@ -607,16 +607,13 @@ impl buffer::IBufferWrite for BinaryStream {
      fn write_triad(&mut self, v: u32) {
           // this is actually a hack fix!
           // we're actually writing a u24 here
-          // we don't care about the last byte, so we need to check if its within range.
-          if !is_u24(v) {
-               panic!("Value is outside of 3 byte range!");
-          }
-          let bytes = &v.to_be_bytes()[1..3];
+          // we don't care about the last byte
+          let bytes = &v.to_le_bytes()[1..3];
           self.write_slice(bytes);
      }
 
-     fn write_triad_le(&mut self, v: u32) {
-          let bytes = &v.to_le_bytes()[1..3];
+     fn write_triad_be(&mut self, v: u32) {
+          let bytes = &v.to_be_bytes()[1..3];
           self.write_slice(bytes);
      }
 

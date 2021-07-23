@@ -51,8 +51,9 @@ pub trait IBufferWrite {
      fn write_ushort(&mut self, v: u16);
      fn write_short_le(&mut self, v: i16);
      fn write_ushort_le(&mut self, v: u16);
+     // Any bytes exceeding the size of a 3 byte number, are automatically removed.
      fn write_triad(&mut self, v: u32);
-     fn write_triad_le(&mut self, v: u32);
+     fn write_triad_be(&mut self, v: u32);
      fn write_int(&mut self, v: i16);
      fn write_int_le(&mut self, v: i16);
      fn write_float(&mut self, v: f32);
@@ -72,7 +73,7 @@ pub trait IBufferWrite {
 
 pub fn is_u24(num: u32) -> bool {
      // checks if num is within range
-     !num < 0x0000_0000 && !num > 0x00FF_FFFF
+     !(num > 0x00FF_FFFF)
 }
 
 // /// Buffer implementation on Array (im lazy someone pls)
