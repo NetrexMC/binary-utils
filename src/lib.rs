@@ -10,6 +10,16 @@ mod tests {
      use crate::*;
 
      #[test]
+     fn slice_test() {
+          let mut stream = stream::BinaryStream::init(&[132, 0, 0, 0, 64, 0, 144, 0, 0, 0, 9, 144, 81, 212, 113, 24, 50, 101, 140, 0, 0, 0, 0, 4, 43, 112, 111, 0].to_vec());
+          stream.read_byte();
+          stream.read_triad();
+          let offset = stream.get_offset();
+          let mut clamped = stream.clamp(offset, None);
+          assert_eq!(clamped.read_byte(), 64)
+     }
+
+     #[test]
      fn test_read_short() {
           let mut bin_stream = stream::BinaryStream::new();
           bin_stream.write_short(12);

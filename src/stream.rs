@@ -173,6 +173,19 @@ pub struct BinaryStream {
      bounds: (usize, usize)
 }
 
+impl BinaryStream {
+     /// Takes a slice out of the vector and makes a new binary stream with that slice or "segment".
+     pub fn slice(&mut self, start: usize, end: Option<usize>) -> Self {
+          if end.is_none() {
+               let buf = self.buffer[start..self.buffer.len()].to_vec();
+               return BinaryStream::init(&buf);
+          } else {
+               let buf = self.buffer[start..end.unwrap()].to_vec();
+               return BinaryStream::init(&buf);
+          }
+     }
+}
+
 impl IBinaryStream for BinaryStream {
      /// Increases the offset. If `None` is given in `amount`, 1 will be used.
      fn increase_offset(&mut self, amount: Option<usize>) -> usize {
@@ -271,22 +284,25 @@ impl IBinaryStream for BinaryStream {
      ///     let stream = BinaryStream::new(vec!(([98,105,110,97,114,121,32,117,116,105,108,115])));
      ///     let shareable_stream = stream.clamp(7, None); // 32,117,116,105,108,115 are now the only bytes readable externally
      fn clamp(&mut self, start: usize, end: Option<usize>) -> Self {
+          let mut new = self.clone();
           if start > self.buffer.len() {
                panic!(ClampError::new(ClampErrorCause::AboveBounds));
           } else if start < self.bounds.0 {
                panic!(ClampError::new(ClampErrorCause::BelowBounds));
           }
 
-          self.bounds.0 = start;
+          new.bounds.0 = start;
+          new.set_offset(start);
 
           if match end { None => false, _ => true} {
                if end.unwrap() < self.bounds.0 {
                     panic!(ClampError::new(ClampErrorCause::InvalidBounds));
                }
-               self.bounds.1 = end.unwrap();
+               new.bounds.1 = end.unwrap();
           }
 
-          BinaryStream::init(&mut self.buffer.clone()) // Dereferrenced for use by consumer.
+          // Dereferrenced for use by consumer.
+          new
      }
 
      /// Checks whether or not the given offset is in between the streams bounds and if the offset is valid.
