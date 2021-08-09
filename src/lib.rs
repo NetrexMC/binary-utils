@@ -63,4 +63,12 @@ mod tests {
 
           assert_eq!(1772009, num);
      }
+
+     #[test]
+     fn test_write_triad() {
+          let okay = vec![0, 0, 0];
+          let mut bin = stream::BinaryStream::new();
+          bin.write_triad(0);
+          assert_eq!(okay, bin.get_buffer());
+     }
 }

@@ -624,12 +624,12 @@ impl buffer::IBufferWrite for BinaryStream {
           // this is actually a hack fix!
           // we're actually writing a u24 here
           // we don't care about the last byte
-          let bytes = &v.to_le_bytes()[1..3];
+          let bytes = &v.to_le_bytes()[0..3];
           self.write_slice(bytes);
      }
 
      fn write_triad_be(&mut self, v: u32) {
-          let bytes = &v.to_be_bytes()[1..3];
+          let bytes = &v.to_be_bytes()[0..3];
           self.write_slice(bytes);
      }
 
