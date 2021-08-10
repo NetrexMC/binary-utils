@@ -26,8 +26,10 @@ pub trait IBufferRead {
      /// Same as `read_triad` except reads in a
      /// [Big Endian](https://www.freecodecamp.org/news/what-is-endianness-big-endian-vs-little-endian/) format.
      fn read_triad_be(&mut self) -> u32;
-     fn read_int(&mut self) -> i16;
-     fn read_int_le(&mut self) -> i16;
+     fn read_int(&mut self) -> i32;
+     fn read_int_le(&mut self) -> i32;
+     fn read_uint(&mut self) -> u32;
+     fn read_uint_le(&mut self) -> u32;
      fn read_float(&mut self) -> f32;
      fn read_float_le(&mut self) -> f32;
      fn read_double(&mut self) -> f64;
@@ -54,8 +56,10 @@ pub trait IBufferWrite {
      // Any bytes exceeding the size of a 3 byte number, are automatically removed.
      fn write_triad(&mut self, v: u32);
      fn write_triad_be(&mut self, v: u32);
-     fn write_int(&mut self, v: i16);
-     fn write_int_le(&mut self, v: i16);
+     fn write_int(&mut self, v: i32);
+     fn write_int_le(&mut self, v: i32);
+     fn write_uint(&mut self, v: u32);
+     fn write_uint_le(&mut self, v: u32);
      fn write_float(&mut self, v: f32);
      fn write_float_le(&mut self, v: f32);
      fn write_double(&mut self, v: f64);

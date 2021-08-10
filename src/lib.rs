@@ -52,10 +52,11 @@ mod tests {
           let mut stream = stream::BinaryStream::init(&raw);
           stream.read_byte();
           assert_eq!([0, 255, 255, 0].to_vec(), stream.read_slice(Some(4)));
+          assert_eq!(stream.get_offset(), 5);
      }
 
      #[test]
-     fn test_read_int() {
+     fn test_read_triad() {
           let buf = [ 233, 9, 27, 10 ];
           // we need to read the first three bytes
           let mut bin = stream::BinaryStream::init(&buf.to_vec());
@@ -70,5 +71,14 @@ mod tests {
           let mut bin = stream::BinaryStream::new();
           bin.write_triad(0);
           assert_eq!(okay, bin.get_buffer());
+     }
+
+     #[test]
+     fn test_read_int() {
+          let buf = [ 0, 0, 0, 7 ];
+          let mut bin = stream::BinaryStream::init(&buf.to_vec());
+          let num = bin.read_int();
+
+          assert_eq!(7, num);
      }
 }

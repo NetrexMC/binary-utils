@@ -502,13 +502,26 @@ impl buffer::IBufferRead for BinaryStream {
           b
      }
 
-     fn read_int(&mut self) -> i16 {
-          self.read_short()
+     fn read_int(&mut self) -> i32 {
+          let bytes = [self.read_byte(), self.read_byte(), self.read_byte(), self.read_byte()];
+          i32::from_be_bytes(bytes)
      }
 
 
-     fn read_int_le(&mut self) -> i16 {
-          self.read_short_le()
+     fn read_int_le(&mut self) -> i32 {
+          let bytes = [self.read_byte(), self.read_byte(), self.read_byte(), self.read_byte()];
+          i32::from_le_bytes(bytes)
+     }
+
+     fn read_uint(&mut self) -> u32 {
+          let bytes = [self.read_byte(), self.read_byte(), self.read_byte(), self.read_byte()];
+          u32::from_be_bytes(bytes)
+     }
+
+
+     fn read_uint_le(&mut self) -> u32 {
+          let bytes = [self.read_byte(), self.read_byte(), self.read_byte(), self.read_byte()];
+          u32::from_le_bytes(bytes)
      }
 
      fn read_float(&mut self) -> f32 {
@@ -633,11 +646,19 @@ impl buffer::IBufferWrite for BinaryStream {
           self.write_slice(bytes);
      }
 
-     fn write_int(&mut self, v: i16) {
+     fn write_int(&mut self, v: i32) {
           self.write_slice(&v.to_be_bytes());
      }
 
-     fn write_int_le(&mut self, v: i16) {
+     fn write_int_le(&mut self, v: i32) {
+          self.write_slice(&v.to_be_bytes());
+     }
+
+     fn write_uint(&mut self, v: u32) {
+          self.write_slice(&v.to_be_bytes());
+     }
+
+     fn write_uint_le(&mut self, v: u32) {
           self.write_slice(&v.to_be_bytes());
      }
 
