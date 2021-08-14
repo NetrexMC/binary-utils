@@ -57,12 +57,30 @@ mod tests {
 
      #[test]
      fn test_read_triad() {
-          let buf = [ 233, 9, 27, 10 ];
+          let buf = [ 233, 9, 27 ];
           // we need to read the first three bytes
           let mut bin = stream::BinaryStream::init(&buf.to_vec());
           let num = bin.read_triad();
 
           assert_eq!(1772009, num);
+     }
+
+     #[test]
+     fn test_read_triad_zero() {
+          let buf = [ 0, 0, 0 ];
+          let mut bin = stream::BinaryStream::init(&buf.to_vec());
+          let num = bin.read_triad();
+
+          assert_eq!(num, 0);
+     }
+
+     #[test]
+     fn test_read_index_at_1() {
+          let buf = [144, 0, 0, 0, 9, 143, 162, 116, 15, 10, 144, 162, 92, 0, 0, 0, 0, 21, 47, 173, 144, 0];
+          let mut bin = stream::BinaryStream::init(&buf.to_vec());
+          bin.read_byte();
+          bin.read_triad();
+          
      }
 
      #[test]

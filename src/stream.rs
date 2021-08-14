@@ -587,8 +587,20 @@ impl buffer::IBufferRead for BinaryStream {
           return b as isize;
      }
 
-     fn read_uvar_int(&mut self) -> isize {
-          0
+     fn read_uvar_int(&mut self) -> u64 {
+          let mut b: u64 = 0;
+          let mut i = 0;
+          while i <= 28 {
+               let byte: u64 = self.read_byte().try_into().unwrap();
+               b |= (byte & 0x7f) << i;
+
+               if byte & 0x80 == 0 {
+                    return b
+               }
+
+               i += 7;
+          }
+          b
      }
 
      fn read_var_long(&mut self) -> isize {

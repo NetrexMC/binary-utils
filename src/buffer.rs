@@ -39,7 +39,7 @@ pub trait IBufferRead {
      fn read_long_le(&mut self) -> i64;
      fn read_ulong_le(&mut self) -> u64;
      fn read_var_int(&mut self) -> isize;
-     fn read_uvar_int(&mut self) -> isize;
+     fn read_uvar_int(&mut self) -> u64;
      fn read_var_long(&mut self) -> isize;
      fn read_uvar_long(&mut self) -> isize;
      fn read_string(&mut self) -> Result<String, FromUtf8Error>;
