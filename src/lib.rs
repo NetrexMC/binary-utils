@@ -80,7 +80,14 @@ mod tests {
           let mut bin = stream::BinaryStream::init(&buf.to_vec());
           bin.read_byte();
           bin.read_triad();
-          
+     }
+
+     #[test]
+     fn test_read_var_int() {
+          let buf = [236, 189, 203, 118, 242, 202, 214, 247, 247, 126, 189, 36, 151, 241, 166, 155, 253, 14, 73, 128, 183, 73, 207, 128, 132, 193, 72, 24, 161, 3, 82, 70, 198, 30, 128, 216, 6, 36, 48, 182, 49, 167, 140];
+          let mut bin = stream::BinaryStream::init(&buf.to_vec());
+          let v = bin.read_var_int();
+          assert_eq!(v, 0)
      }
 
      #[test]

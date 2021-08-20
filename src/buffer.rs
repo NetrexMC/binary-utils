@@ -38,10 +38,10 @@ pub trait IBufferRead {
      fn read_ulong(&mut self) -> u64;
      fn read_long_le(&mut self) -> i64;
      fn read_ulong_le(&mut self) -> u64;
-     fn read_var_int(&mut self) -> isize;
-     fn read_uvar_int(&mut self) -> u64;
-     fn read_var_long(&mut self) -> isize;
-     fn read_uvar_long(&mut self) -> isize;
+     fn read_var_int(&mut self) -> i32;
+     fn read_uvar_int(&mut self) -> u32;
+     fn read_var_long(&mut self) -> i64;
+     fn read_uvar_long(&mut self) -> u64;
      fn read_string(&mut self) -> Result<String, FromUtf8Error>;
 }
 
@@ -68,10 +68,10 @@ pub trait IBufferWrite {
      fn write_ulong(&mut self, v: u64);
      fn write_long_le(&mut self, v: i64);
      fn write_ulong_le(&mut self, v: u64);
-     fn write_var_int(&mut self, v: isize);
-     fn write_signed_var_int(&mut self, v: isize);
-     fn write_var_long(&mut self, v: isize);
-     fn write_signed_var_long(&mut self, v: isize);
+     fn write_var_int(&mut self, v: i32);
+     fn write_uvar_int(&mut self, v: u32);
+     fn write_var_long(&mut self, v: i64);
+     fn write_uvar_long(&mut self, v: u64);
      fn write_string(&mut self, v: String);
 }
 

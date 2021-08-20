@@ -572,42 +572,30 @@ impl buffer::IBufferRead for BinaryStream {
           b
      }
 
-     fn read_var_int(&mut self) -> isize {
-          // taken from pmmp, this might be messed up
-          let mut b: u16 = 0;
-          let mut i = 0;
-          while i <= 28 {
-               let byte: u16 = self.read_byte().try_into().unwrap();
-               b |= (byte & 0x7f) << i;
-               if (byte & 0x80) == 0 {
-                    return b as isize
-               }
-               i += 7;
-          }
-          return b as isize;
-     }
-
-     fn read_uvar_int(&mut self) -> u64 {
-          let mut b: u64 = 0;
-          let mut i = 0;
-          while i <= 28 {
-               let byte: u64 = self.read_byte().try_into().unwrap();
-               b |= (byte & 0x7f) << i;
-
-               if byte & 0x80 == 0 {
-                    return b
-               }
-
-               i += 7;
-          }
-          b
-     }
-
-     fn read_var_long(&mut self) -> isize {
+     fn read_var_int(&mut self) -> i32 {
           0
      }
 
-     fn read_uvar_long(&mut self) -> isize {
+     fn read_uvar_int(&mut self) -> u32 {
+          let mut value: u32 = 0;
+          let mut i: u32 = 0;
+
+          while i < 35 {
+               let byte = self.read_byte();
+               value |= u32::from(byte & 0x7f) << i;
+               if byte & 0x80 == 0 {
+                    return value;
+               }
+               i += 7;
+          }
+          panic!("Read uvarint did not terminate after fifth byte.");
+     }
+
+     fn read_var_long(&mut self) -> i64 {
+          0
+     }
+
+     fn read_uvar_long(&mut self) -> u64 {
           0
      }
 }
@@ -706,21 +694,22 @@ impl buffer::IBufferWrite for BinaryStream {
           self.write_slice(&v.to_le_bytes());
      }
 
-     fn write_var_int(&mut self, v: isize) {
-          self.write_slice(&v.to_be_bytes());
-     }
-
-     fn write_signed_var_int(&mut self, v: isize) {
-          self.write_slice(&v.to_be_bytes());
-     }
-
-     fn write_var_long(&mut self, v: isize) {
-          self.write_slice(&v.to_be_bytes());
-     }
-
-     fn write_signed_var_long(&mut self, _v: isize) {
+     fn write_var_int(&mut self, v: i32) {
 
      }
+
+     fn write_uvar_int(&mut self, v: u32) {
+
+     }
+
+     fn write_var_long(&mut self, v: i64) {
+
+     }
+
+     fn write_uvar_long(&mut self, v: u64) {
+
+     }
+
 
      fn write_string(&mut self, v: String) {
           self.write_ushort(v.len() as u16);
