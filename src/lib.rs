@@ -10,6 +10,15 @@ mod tests {
      use crate::*;
 
      #[test]
+     fn read_write_read_write_varint() {
+          let mut stream = stream::BinaryStream::new();
+          stream.write_uvar_long(32432);
+          dbg!(stream.clone());
+          stream.set_offset(0);
+          assert_eq!(stream.read_uvar_long(), 32432);
+     }
+
+     #[test]
      fn slice_test() {
           let mut stream = stream::BinaryStream::init(&[132, 0, 0, 0, 64, 0, 144, 0, 0, 0, 9, 144, 81, 212, 113, 24, 50, 101, 140, 0, 0, 0, 0, 4, 43, 112, 111, 0].to_vec());
           stream.read_byte();

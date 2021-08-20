@@ -184,11 +184,9 @@ impl BinaryStream {
                return BinaryStream::init(&buf);
           }
      }
-}
 
-impl IBinaryStream for BinaryStream {
      /// Increases the offset. If `None` is given in `amount`, 1 will be used.
-     fn increase_offset(&mut self, amount: Option<usize>) -> usize {
+     pub fn increase_offset(&mut self, amount: Option<usize>) -> usize {
           let amnt = match amount {
                None => 1 as usize,
                Some(n) => n
@@ -208,7 +206,7 @@ impl IBinaryStream for BinaryStream {
 
      /// Changes the offset of the stream to the new given offset.
      /// returns `true` if the offset is in bounds and `false` if the offset is out of bounds.
-     fn set_offset(&mut self, offset: usize) -> bool {
+     pub fn set_offset(&mut self, offset: usize) -> bool {
           if offset > self.bounds.1 {
                false
           } else {
@@ -218,17 +216,17 @@ impl IBinaryStream for BinaryStream {
      }
 
      /// Returns the current offset at the given time when called.
-     fn get_offset(&mut self) -> usize {
+     pub fn get_offset(&mut self) -> usize {
           self.offset
      }
 
      /// Returns the length of the current buffer.
-     fn get_length(&self) -> usize {
+     pub fn get_length(&self) -> usize {
           self.buffer.len() as usize
      }
 
      /// Returns the current buffer as a clone of the original.
-     fn get_buffer(&self) -> Vec<u8> {
+     pub fn get_buffer(&self) -> Vec<u8> {
           self.buffer.clone()
      }
 
@@ -242,21 +240,21 @@ impl IBinaryStream for BinaryStream {
      ///
      ///     stream.allocate(1024);
      ///     stream.write_string(String::from("a random string, that can only be a max of 1024 bytes."));
-     fn allocate(&mut self, bytes: usize) {
+     pub fn allocate(&mut self, bytes: usize) {
           self.bounds.1 = self.buffer.len() + bytes;
           // self.buffer.resize(self.bounds.1, 0)
      }
 
      /// Allocates more bytes to the binary stream only **if** the given bytelength will exceed
      /// the current binarystream's bounds.
-     fn allocate_if(&mut self, bytes: usize) {
+     pub fn allocate_if(&mut self, bytes: usize) {
           if (self.buffer.len() + bytes > self.bounds.1) && (self.offset + bytes) >= self.bounds.1 {
                self.allocate(bytes)
           }
      }
 
      /// Create a new Binary Stream from nothing.
-     fn new() -> Self {
+     pub fn new() -> Self {
           Self {
                buffer: Vec::new(),
                bounds: (0, 0),
@@ -265,7 +263,7 @@ impl IBinaryStream for BinaryStream {
      }
 
      /// Create a new Binary Stream from a vector of bytes.
-     fn init(buf: &Vec<u8>) -> Self {
+     pub fn init(buf: &Vec<u8>) -> Self {
           Self {
                buffer: buf.clone(),
                bounds: (0, buf.len()),
@@ -283,7 +281,7 @@ impl IBinaryStream for BinaryStream {
      ///
      ///     let stream = BinaryStream::new(vec!(([98,105,110,97,114,121,32,117,116,105,108,115])));
      ///     let shareable_stream = stream.clamp(7, None); // 32,117,116,105,108,115 are now the only bytes readable externally
-     fn clamp(&mut self, start: usize, end: Option<usize>) -> Self {
+     pub fn clamp(&mut self, start: usize, end: Option<usize>) -> Self {
           let mut new = self.clone();
           if start > self.buffer.len() {
                panic!(ClampError::new(ClampErrorCause::AboveBounds));
@@ -314,7 +312,7 @@ impl IBinaryStream for BinaryStream {
      ///     } else {
      ///       println!("100 is out of bounds.");
      ///     }
-     fn is_within_bounds(&self, offset: usize) -> bool {
+     pub fn is_within_bounds(&self, offset: usize) -> bool {
           !(offset > self.bounds.1 || offset < self.bounds.0 || offset > self.buffer.len())
      }
 
@@ -329,7 +327,7 @@ impl IBinaryStream for BinaryStream {
      ///         }
      ///         break;
      ///      }
-     fn read(&mut self) -> u8 {
+     pub fn read(&mut self) -> u8 {
           let byte = self[self.offset];
           self.clamp(self.offset, None);
           self.increase_offset(None);
@@ -337,7 +335,7 @@ impl IBinaryStream for BinaryStream {
      }
 
      /// Writes a byte ands returns it.
-     fn write_usize(&mut self, v: usize) -> usize {
+     pub fn write_usize(&mut self, v: usize) -> usize {
           self.allocate_if(1);
           self.buffer.push(v as u8);
           v
@@ -348,7 +346,7 @@ impl IBinaryStream for BinaryStream {
      ///
      /// **Example:**
      ///     stream.write_slice(&[0, 38, 92, 10]);
-     fn write_slice(&mut self, v: &[u8]) {
+     pub fn write_slice(&mut self, v: &[u8]) {
           self.allocate_if(v.len());
           self.buffer.extend_from_slice(v);
      }
@@ -358,7 +356,7 @@ impl IBinaryStream for BinaryStream {
      ///
      /// **Example:**
      ///     stream.read_slice();
-     fn read_slice_exact(&mut self, length: Option<usize>) -> Vec<u8> {
+     pub fn read_slice_exact(&mut self, length: Option<usize>) -> Vec<u8> {
           let len = match length {
                Some(v) => v,
                None => 1
@@ -373,7 +371,7 @@ impl IBinaryStream for BinaryStream {
      ///
      /// **Example:**
      ///     stream.read_slice();
-     fn read_slice(&mut self, length: Option<usize>) -> Vec<u8> {
+     pub fn read_slice(&mut self, length: Option<usize>) -> Vec<u8> {
           let len = match length {
                Some(v) => v,
                None => 1
@@ -573,7 +571,16 @@ impl buffer::IBufferRead for BinaryStream {
      }
 
      fn read_var_int(&mut self) -> i32 {
-          0
+          let var_int: u32 = self.read_uvar_int();
+          let mut value;
+
+          // to-do remove this hack
+          value = i32::from_be_bytes(var_int.to_be_bytes());
+          if var_int & 1 != 0 {
+               value = value ^ value
+          }
+
+          value
      }
 
      fn read_uvar_int(&mut self) -> u32 {
@@ -592,11 +599,32 @@ impl buffer::IBufferRead for BinaryStream {
      }
 
      fn read_var_long(&mut self) -> i64 {
-          0
+          let var_int: u64 = self.read_uvar_long();
+          let mut value;
+
+          // to-do remove this hack
+          value = i64::from_be_bytes(var_int.to_be_bytes());
+          if var_int & 1 != 0 {
+               value = value ^ value
+          }
+
+          value
      }
 
      fn read_uvar_long(&mut self) -> u64 {
-          0
+          let mut value: u64 = 0;
+          let mut i: u64 = 0;
+
+          while i < 70 {
+               let byte = self.read_byte();
+               value |= ((byte & 0x7f) << i) as u64;
+
+               if byte & 0x80 == 0 {
+                    return value;
+               }
+               i += 7;
+          }
+          panic!("Read uvarlong did not terminate after tenth byte.");
      }
 }
 
@@ -695,19 +723,51 @@ impl buffer::IBufferWrite for BinaryStream {
      }
 
      fn write_var_int(&mut self, v: i32) {
-
+          let bytes = v.to_be_bytes().to_vec();
+          for byte in bytes.iter() {
+               if *byte == 0 {
+                    self.write_byte(*byte & 0x7f);
+                    return;
+               } else {
+                    self.write_byte(*byte);
+               }
+          }
      }
 
      fn write_uvar_int(&mut self, v: u32) {
-
+          let bytes = v.to_be_bytes().to_vec();
+          for byte in bytes.iter() {
+               if *byte == 0 {
+                    // self.write_byte(*byte);
+                    return;
+               } else {
+                    self.write_byte(*byte);
+               }
+          }
      }
 
      fn write_var_long(&mut self, v: i64) {
-
+          let bytes = v.to_be_bytes().to_vec();
+          for byte in bytes.iter() {
+               if *byte == 0 {
+                    self.write_byte(*byte);
+                    return;
+               } else {
+                    self.write_byte(*byte);
+               }
+          }
      }
 
      fn write_uvar_long(&mut self, v: u64) {
-
+          let bytes = v.to_be_bytes().to_vec();
+          for byte in bytes.iter() {
+               if *byte == 0 {
+                    self.write_byte(*byte);
+                    return;
+               } else {
+                    self.write_byte(*byte);
+               }
+          }
      }
 
 
