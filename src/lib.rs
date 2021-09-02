@@ -5,6 +5,14 @@ pub mod stream;
 pub use buffer::*;
 pub use stream::*;
 
+pub trait StreamEncoder {
+     fn into_stream(&self) -> BinaryStream;
+}
+
+pub trait StreamDecoder {
+     fn from_stream(stream: BinaryStream) -> Self;
+}
+
 #[cfg(test)]
 mod tests {
      use crate::*;
