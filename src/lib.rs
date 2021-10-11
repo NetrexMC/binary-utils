@@ -1,5 +1,10 @@
+#![feature(log_syntax)]
+
 use std::io;
 use byteorder::{ReadBytesExt, WriteBytesExt};
+
+// pub use bin_macro::*;
+
 pub mod u24;
 
 pub type Stream = io::Cursor<Vec<u8>>;
@@ -8,7 +13,7 @@ pub trait Streamable {
 	/// Writes `self` to the given buffer.
 	fn write(&self, src: &mut Vec<u8>);
 	/// Reads `self` from the given buffer.
-	fn read(source: &[u8], position: &mut usize) -> Self;
+	fn read(source: &[u8], position: &mut usize) -> Self where Self: Sized;
 }
 
 pub trait BinWrite: io::Write {

@@ -7,3 +7,5 @@ include = ["src/**/*", "README.md"]
 
 [dependencies]
 byteorder = "1.4.3"
+bin_macro = { path = "./bin_macro" }
+endiannezz = "0.6.5"
