@@ -5,7 +5,10 @@ use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::{From, Into};
 use std::io;
 use std::ops::{Add, BitOr, Div, Mul, Sub};
+
+use crate::Streamable;
 /// Base Implementation for a u24
+#[derive(Clone, Copy, Debug)]
 pub struct u24(u32); // inner is validated
 
 impl u24 {
@@ -29,6 +32,18 @@ impl u24 {
     pub fn to_be_bytes(self) -> [u8; 3] {
         let bytes = self.0.to_be_bytes();
         [bytes[0], bytes[1], bytes[2]]
+    }
+}
+
+impl Streamable for u24 {
+    /// Writes `self` to the given buffer.
+	fn write(&self) -> Vec<u8> {
+        self.to_be_bytes().to_vec().clone()
+    }
+	/// Reads `self` from the given buffer.
+	fn read(source: &[u8], position: &mut usize) -> Self {
+        *position += 2;
+        Self::from_be_bytes(source)
     }
 }
 

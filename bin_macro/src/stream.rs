@@ -16,11 +16,15 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                Ok(quote! {
                     #[automatically_derived]
                     impl Streamable for #name {
-                         fn write(&self, &mut source: &mut Vec<u8>) {
+                         fn write(&self) -> Vec<u8> {
+                              use ::std::io::Write;
+                              let mut writer = Vec::new();
                               #writes
+                              writer
                          }
 
                          fn read(source: &[u8], position: &mut usize) -> Self {
+                              use ::std::io::Read;
                               Self {
                                    #reads
                               }
@@ -56,6 +60,6 @@ pub fn impl_struct_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>
 }
 
 pub fn impl_streamable_lazy(name: &Ident, ty: &Type) -> (TokenStream, TokenStream) {
-     (quote!{ self.#name.write(&mut source); }, quote!(#name: #ty::read(&mut source, &mut position)))
+     (quote!{ writer.write(&self.#name.write()[..]).unwrap(); }, quote!(#name: #ty::read(&source, position)))
 }
 

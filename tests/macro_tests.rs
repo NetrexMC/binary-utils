@@ -10,4 +10,5 @@ pub struct TestPacket {
 fn construct_struct() {
      let mut buf = vec![1, 30];
      let pk = TestPacket::read(&buf, &mut 0);
+     assert_eq!(buf, pk.write())
 }
