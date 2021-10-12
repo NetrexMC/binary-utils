@@ -1,4 +1,4 @@
-use proc_macro2::{Ident, Literal, TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{Data, DeriveInput, Error, Fields, Result, Type, token::SelfType};
 
@@ -7,30 +7,22 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
      match input.data {
           Data::Struct(v) => {
                // iterate through struct fields
-               let (writes, reads) = impl_struct_fields(v.fields);
+               let (w, r) = impl_struct_fields(v.fields);
+               let writes = quote!(#(#w)*);
+               let reads = quote!(#(#r),*);
+               // get the visibility etc on each field
                // return a quote for block impl
-               dbg!(quote! {
-                    impl Streamable for #name {
-                         fn write(&self, &mut source) {
-                              ( #(#writes)* )
-                         }
-
-                         fn read(source: &[u8], position: &mut usize) -> Self {
-                              Self {
-                                   ( #(#reads)* )
-                              }
-                         }
-                    }
-               });
+               dbg!(&writes);
                Ok(quote! {
+                    #[automatically_derived]
                     impl Streamable for #name {
-                         fn write(&self, &mut source) {
-                              ( #(#writes)* )
+                         fn write(&self, &mut source: &mut Vec<u8>) {
+                              #writes
                          }
 
                          fn read(source: &[u8], position: &mut usize) -> Self {
                               Self {
-                                   ( #(#reads)* )
+                                   #reads
                               }
                          }
                     }
@@ -64,6 +56,6 @@ pub fn impl_struct_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>
 }
 
 pub fn impl_streamable_lazy(name: &Ident, ty: &Type) -> (TokenStream, TokenStream) {
-     (quote!(self.#name.write(&mut source);), quote!(#name: #ty::read(&mut source, &mut offset)))
+     (quote!{ self.#name.write(&mut source); }, quote!(#name: #ty::read(&mut source, &mut position)))
 }
 
