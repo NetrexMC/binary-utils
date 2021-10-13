@@ -1,6 +1,6 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::{ToTokens, quote};
-use syn::{Data, DeriveInput, Error, Fields, Result, Type, token::SelfType};
+use quote::quote;
+use syn::{Data, DeriveInput, Fields, Result, Type};
 
 pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
      let name = &input.ident;
@@ -32,7 +32,7 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                     }
                })
           },
-          Data::Enum(v) => Err(syn::Error::new(name.span(), "BinaryStream does not support Enums. Use Structs instead.")),
+          Data::Enum(_v) => Err(syn::Error::new(name.span(), "BinaryStream does not support Enums. Use Structs instead.")),
           Data::Union(_) => Err(syn::Error::new(name.span(), "BinaryStream does not support Type Unions. Use Enums instead."))
      }
 }
@@ -49,7 +49,7 @@ pub fn impl_struct_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>
                     readers.push(reader);
                }
           },
-          Fields::Unnamed(v) => {
+          Fields::Unnamed(_v) => {
                panic!("Can not parse un-named fields at this current point in time.")
           },
           Fields::Unit => {

@@ -1,8 +1,7 @@
 use crate::Streamable;
-use byteorder::{ReadBytesExt, WriteBytesExt, BE, LE};
-use std::cmp::{Ordering, PartialEq, PartialOrd};
+use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::convert::{From, Into};
-use std::io::{self, Cursor, Read, Write};
+use std::io::Cursor;
 use std::ops::{Add, BitOr, Div, Mul, Sub};
 /// A minecraft specific unsized integer
 /// A varint can be one of `32` and `64` bits
@@ -80,9 +79,9 @@ macro_rules! varint_impl_generic {
             }
             /// Reads `self` from the given buffer.
             fn read(source: &[u8], position: &mut usize) -> Self {
-                *position += 2;
-                //  Self::from_be_bytes(source)
-                Self(0)
+               let v = Self::from_be_bytes(&mut Cursor::new(source.to_vec()));
+               *position += v.get_byte_length() as usize;
+               v
             }
         }
     };
@@ -123,6 +122,23 @@ macro_rules! varint_impl_generic64 {
                 buf
             }
 
+            pub fn from_be_bytes(stream: &mut Cursor<Vec<u8>>) -> Self {
+               let mut value: $ty  = 0;
+
+               for x in (0..70).step_by(7) {
+                  let byte = stream.read_u8().unwrap();
+                  value |= (byte & 0x7f) as $ty << x;
+
+                  // if the byte is a full length of a byte
+                  // we can assume we are done
+                  if byte & 0x80 == 0 {
+                       break;
+                  }
+               }
+
+               VarInt::<$ty>(value)
+          }
+
             //   pub fn from_be_bytes(bytes: &[u8]) -> Self {
             //       <$ty>::from_be_bytes([bytes[0], bytes[1], bytes[2], 0]).into()
             //   }
@@ -142,9 +158,9 @@ macro_rules! varint_impl_generic64 {
             }
             /// Reads `self` from the given buffer.
             fn read(source: &[u8], position: &mut usize) -> Self {
-                *position += 2;
-                //  Self::from_be_bytes(source)
-                Self(0)
+               let v = Self::from_be_bytes(&mut Cursor::new(source.to_vec()));
+               *position += v.get_byte_length() as usize;
+               v
             }
         }
     };
