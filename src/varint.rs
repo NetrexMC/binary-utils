@@ -1,12 +1,20 @@
 use crate::Streamable;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::convert::{From, Into};
-use std::io::Cursor;
+use std::io::{self, Cursor};
 use std::ops::{Add, BitOr, Div, Mul, Sub};
 /// A minecraft specific unsized integer
 /// A varint can be one of `32` and `64` bits
 #[derive(Clone, Copy, Debug)]
 pub struct VarInt<T>(pub T);
+
+pub trait VarIntWriter<T>: io::Write {
+    fn write_var_int(&mut self, num: VarInt<T>) -> io::Result<usize>;
+}
+
+pub trait VarIntReader<T>: io::Read {
+    fn read_var_int(&mut self) -> io::Result<VarInt<T>>;
+}
 
 pub const VAR_INT_32_BYTE_MAX: usize = 5;
 pub const VAR_INT_64_BYTE_MAX: usize = 10;
@@ -47,7 +55,7 @@ macro_rules! varint_impl_generic {
                 buf
             }
 
-            pub fn from_be_bytes(stream: &mut Cursor<Vec<u8>>) -> Self {
+            pub fn from_be_bytes_cursor(stream: &mut Cursor<Vec<u8>>) -> Self {
                  let mut value: $ty  = 0;
 
                  for x in (0..35).step_by(7) {
@@ -64,6 +72,24 @@ macro_rules! varint_impl_generic {
                  VarInt::<$ty>(value)
             }
 
+            pub fn from_be_bytes(bstream: &[u8]) -> Self {
+                let mut stream = Cursor::new(bstream);
+                let mut value: $ty  = 0;
+
+                for x in (0..35).step_by(7) {
+                   let byte = stream.read_u8().unwrap();
+                   value |= (byte & 0x7f) as $ty << x;
+
+                   // if the byte is a full length of a byte
+                   // we can assume we are done
+                   if byte & 0x80 == 0 {
+                        break;
+                   }
+                }
+
+                VarInt::<$ty>(value)
+           }
+
             //   pub fn from_le_bytes(bytes: &[u8]) -> Self {
             //       <$ty>::from_be_bytes([0, bytes[1], bytes[2], bytes[3]]).into()
             //   }
@@ -79,9 +105,37 @@ macro_rules! varint_impl_generic {
             }
             /// Reads `self` from the given buffer.
             fn read(source: &[u8], position: &mut usize) -> Self {
-               let v = Self::from_be_bytes(&mut Cursor::new(source.to_vec()));
+               let v = Self::from_be_bytes(source);
                *position += v.get_byte_length() as usize;
                v
+            }
+        }
+
+        impl VarIntReader<$ty> for dyn io::Read {
+            #[inline]
+            fn read_var_int(&mut self) -> io::Result<VarInt<$ty>> {
+                let mut value: $ty  = 0;
+
+                for x in (0..35).step_by(7) {
+                   let byte = self.read_u8().unwrap();
+                   value |= (byte & 0x7f) as $ty << x;
+
+                   // if the byte is a full length of a byte
+                   // we can assume we are done
+                   if byte & 0x80 == 0 {
+                        break;
+                   }
+                }
+
+                Ok(VarInt::<$ty>(value))
+            }
+        }
+
+        impl VarIntWriter<$ty> for dyn io::Write {
+            #[inline]
+            fn write_var_int(&mut self, num: VarInt<$ty>) -> io::Result<usize> {
+                self.write_all(&num.to_be_bytes()[..]).unwrap();
+                Ok(num.get_byte_length() as usize)
             }
         }
     };
