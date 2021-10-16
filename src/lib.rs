@@ -1,17 +1,19 @@
 #![feature(log_syntax)]
 
 use std::convert::TryInto;
-use std::io::{self, Read, Write};
-use byteorder::{ReadBytesExt, WriteBytesExt};
+use std::io;
 
-// pub use bin_macro::*;
+pub use bin_macro::*;
 
 pub mod u24;
 pub mod varint;
 
-pub type Stream = io::Cursor<Vec<u8>>;
+pub use self::{
+    u24::*,
+    varint::*
+};
 
-use varint::{VarInt, VarIntReader, VarIntWriter};
+pub type Stream = io::Cursor<Vec<u8>>;
 
 pub trait Streamable {
     /// Writes `self` to the given buffer.
