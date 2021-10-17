@@ -100,11 +100,11 @@ macro_rules! varint_impl_generic {
 
         impl Streamable for VarInt<$ty> {
             /// Writes `self` to the given buffer.
-            fn write(&self) -> Vec<u8> {
+            fn parse(&self) -> Vec<u8> {
                 self.to_be_bytes().to_vec().clone()
             }
             /// Reads `self` from the given buffer.
-            fn read(source: &[u8], position: &mut usize) -> Self {
+            fn compose(source: &[u8], position: &mut usize) -> Self {
                let v = Self::from_be_bytes(source);
                *position += v.get_byte_length() as usize;
                v
@@ -207,11 +207,11 @@ macro_rules! varint_impl_generic64 {
 
         impl Streamable for VarInt<$ty> {
             /// Writes `self` to the given buffer.
-            fn write(&self) -> Vec<u8> {
+            fn parse(&self) -> Vec<u8> {
                 self.to_be_bytes().to_vec().clone()
             }
             /// Reads `self` from the given buffer.
-            fn read(source: &[u8], position: &mut usize) -> Self {
+            fn compose(source: &[u8], position: &mut usize) -> Self {
                let v = Self::from_be_bytes(&mut Cursor::new(source.to_vec()));
                *position += v.get_byte_length() as usize;
                v

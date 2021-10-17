@@ -37,11 +37,11 @@ impl u24 {
 
 impl Streamable for u24 {
     /// Writes `self` to the given buffer.
-    fn write(&self) -> Vec<u8> {
+    fn parse(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec().clone()
     }
     /// Reads `self` from the given buffer.
-    fn read(source: &[u8], position: &mut usize) -> Self {
+    fn compose(source: &[u8], position: &mut usize) -> Self {
         *position += 2;
         Self::from_be_bytes(source)
     }
