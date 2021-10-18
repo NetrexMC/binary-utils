@@ -1,5 +1,5 @@
 use bin_macro::*;
-use binary_utils::{Streamable, varint::VarInt};
+use binary_utils::{Streamable};
 #[derive(Debug, BinaryStream)]
 pub struct TestPacket {
     pub some_int: u8,
@@ -9,9 +9,52 @@ pub struct TestPacket {
 
 #[test]
 fn construct_struct() {
-    let mut buf = vec![1, 30, 1, 30];
+    let buf = vec![1, 30];
     let pk = TestPacket::compose(&buf, &mut 0);
-    dbg!(&pk);
-    dbg!(pk.parse());
     assert_eq!(buf, pk.parse())
+}
+
+
+#[test]
+fn write_string() {
+    let string = String::from("Hello world!");
+    let hello_world_vec=  vec![
+        0,
+        12,
+        72,
+        101,
+        108,
+        108,
+        111,
+        32,
+        119,
+        111,
+        114,
+        108,
+        100,
+        33
+    ];
+    assert_eq!(hello_world_vec, string.parse());
+}
+
+#[test]
+fn read_string() {
+    let hello_world_vec=  vec![
+        0,
+        12,
+        72,
+        101,
+        108,
+        108,
+        111,
+        32,
+        119,
+        111,
+        114,
+        108,
+        100,
+        33
+    ];
+    let string = String::compose(&hello_world_vec[..], &mut 0);
+    assert_eq!("Hello world!".to_string(), string);
 }
