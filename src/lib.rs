@@ -138,7 +138,7 @@ impl Streamable for String {
               // todo: Remove this nasty hack.
               // todo: The hack being, remove the 2 from indexing on read_short
               // todo: And utilize stream.
-              String::from_utf8_unchecked(stream.get_ref()[2..len].to_vec())
+              String::from_utf8_unchecked(stream.get_ref()[2..len + stream.position() as usize].to_vec())
          }
     }
 }
