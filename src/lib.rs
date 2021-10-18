@@ -5,6 +5,9 @@ use std::io;
 
 pub use bin_macro::*;
 
+use std::io::{Cursor, Write};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+
 pub mod u24;
 pub mod util;
 pub mod varint;
@@ -58,19 +61,6 @@ impl_streamable_primitive!(i32);
 impl_streamable_primitive!(i64);
 impl_streamable_primitive!(i128);
 
-// implements bools
-impl Streamable for bool {
-    fn parse(&self) -> Vec<u8> {
-        vec![if *self { 1 } else { 0 }]
-    }
-
-    fn compose(source: &[u8], position: &mut usize) -> Self {
-        let v = source[*position] == 1;
-        *position += 1;
-        v
-    }
-}
-
 macro_rules! impl_streamable_vec_primitive {
     ($ty: ty) => {
         impl Streamable for Vec<$ty> {
@@ -115,6 +105,44 @@ impl_streamable_vec_primitive!(i16);
 impl_streamable_vec_primitive!(i32);
 impl_streamable_vec_primitive!(i64);
 impl_streamable_vec_primitive!(i128);
+
+
+// implements bools
+impl Streamable for bool {
+    fn parse(&self) -> Vec<u8> {
+        vec![if *self { 1 } else { 0 }]
+    }
+
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        let v = source[*position] == 1;
+        *position += 1;
+        v
+    }
+}
+
+impl Streamable for String {
+    fn parse(&self) -> Vec<u8> {
+         let mut buffer = Vec::<u8>::new();
+         buffer.write_u16::<BigEndian>(self.len() as u16).unwrap();
+         buffer.write_all(self.as_bytes()).unwrap();
+         buffer
+    }
+
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+         let mut stream = Cursor::new(source);
+         stream.set_position(position.clone() as u64);
+         // Maybe do this in the future?
+         let len: usize = stream.read_u16::<BigEndian>().unwrap().into();
+
+         unsafe {
+              // todo: Remove this nasty hack.
+              // todo: The hack being, remove the 2 from indexing on read_short
+              // todo: And utilize stream.
+              String::from_utf8_unchecked(stream.get_ref()[2..len].to_vec())
+         }
+    }
+}
+
 
 // impl<T> Streamable for Vec<T>
 // where
