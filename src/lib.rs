@@ -1,11 +1,12 @@
 #![feature(log_syntax)]
 
-use std::convert::TryInto;
+use std::{convert::TryInto, net::SocketAddr};
 use std::io;
+use std::net::{IpAddr, Ipv6Addr, SocketAddrV6};
 
 pub use bin_macro::*;
 
-use std::io::{Cursor, Write};
+use std::io::{Cursor, Write, Read};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 pub mod u24;
@@ -143,6 +144,87 @@ impl Streamable for String {
     }
 }
 
+
+impl Streamable for SocketAddr {
+    fn parse(&self) -> Vec<u8> {
+        let mut stream = Vec::<u8>::new();
+        match *self {
+            Self::V4(_) => {
+                stream.write_u8(4).unwrap();
+                let partstr = self.to_string();
+                let parts: Vec<&str> = partstr.split(".").collect();
+                for part in parts {
+                    let mask = u8::from_str_radix(part, 10).unwrap();
+                    stream.write_u8(mask).unwrap();
+                }
+                stream.write_u16::<BigEndian>(self.port()).expect("Could not write port to stream.");
+                stream
+            },
+            Self::V6(addr) => {
+                stream.write_u8(6).unwrap();
+                // family? or length??
+                stream.write_u16::<BigEndian>(0).unwrap();
+                // port
+                stream.write_u16::<BigEndian>(self.port()).unwrap();
+                // flow
+                stream.write_u32::<BigEndian>(addr.flowinfo()).unwrap();
+                // actual address here
+                stream.write(&addr.ip().octets()).unwrap();
+                // scope
+                stream.write_u32::<BigEndian>(addr.scope_id()).unwrap();
+                stream
+            }
+        }
+    }
+
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        let mut stream = Cursor::new(source);
+        stream.set_position(*position as u64);
+        match stream.read_u8().unwrap() {
+            4 => {
+                let from = stream.position() as usize;
+                let to = stream.position() as usize + 4;
+                let parts = &source[from..to];
+                stream.set_position(to as u64);
+                let port = stream.read_u16::<BigEndian>().unwrap();
+                SocketAddr::new(IpAddr::from([parts[0], parts[1], parts[2], parts[3]]), port)
+            },
+            6 => {
+                let _family = stream.read_u16::<BigEndian>().unwrap();
+                let port = stream.read_u16::<BigEndian>().unwrap();
+                let flow = stream.read_u32::<BigEndian>().unwrap();
+                let mut parts: [u8; 16] = [0; 16];
+                stream.read(&mut parts).unwrap();
+                // we need to read parts into address
+                let address = {
+                    let mut s = Cursor::new(parts);
+                    let (a, b, c, d, e, f, g, h) = (
+                        s.read_u16::<BigEndian>().unwrap(),
+                        s.read_u16::<BigEndian>().unwrap(),
+                        s.read_u16::<BigEndian>().unwrap(),
+                        s.read_u16::<BigEndian>().unwrap(),
+                        s.read_u16::<BigEndian>().unwrap(),
+                        s.read_u16::<BigEndian>().unwrap(),
+                        s.read_u16::<BigEndian>().unwrap(),
+                        s.read_u16::<BigEndian>().unwrap(),
+                    );
+                    Ipv6Addr::new(a, b, c, d, e, f, g, h)
+                };
+                let scope = stream.read_u32::<BigEndian>().unwrap();
+                SocketAddr::from(SocketAddrV6::new(address, port, flow, scope))
+            },
+            _ => panic!("Unknown Address type!")
+        }
+        //  let addr_type = self.read_byte();
+        //           if addr_type == 4 {
+        //                let parts = self.read_slice(Some(4 as usize));
+        //                let port = self.read_ushort();
+        //                SocketAddr::new(IpAddr::from([parts[0], parts[1], parts[2], parts[3]]), port)
+        //           } else {
+        //                SocketAddr::new(IpAddr::from([0, 0, 0, 0]), 0)
+        //           }
+    }
+}
 
 // impl<T> Streamable for Vec<T>
 // where
