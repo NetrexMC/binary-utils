@@ -10,7 +10,6 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Cursor, Read, Write};
 
 pub mod u24;
-pub mod util;
 pub mod varint;
 
 pub use self::{u24::*, varint::*};
@@ -28,6 +27,31 @@ pub trait Streamable {
 
 /// Little Endian Encoding
 pub struct LE<T>(pub T);
+
+impl<T> Streamable for LE<T>
+where
+    T: Streamable {
+    fn parse(&self) -> Vec<u8> {
+        reverse_vec(self.0.parse())
+    }
+
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        // if the source is expected to be LE we can swap it
+        // hehe...
+        let stream = reverse_vec(source.to_vec());
+        LE(T::compose(&stream[..], position))
+    }
+}
+
+/// Reverses the bytes in a given vector
+fn reverse_vec(bytes: Vec<u8>) -> Vec<u8> {
+    let mut ret: Vec<u8> = Vec::new();
+
+    for x in (0..bytes.len()).rev() {
+        ret.push(*bytes.get(x).unwrap());
+    }
+    ret
+}
 
 /// Big Endian Encoding
 pub struct BE<T>(pub T);
