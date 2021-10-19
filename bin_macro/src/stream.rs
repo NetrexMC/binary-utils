@@ -12,7 +12,6 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                let reads = quote!(#(#r),*);
                // get the visibility etc on each field
                // return a quote for block impl
-               dbg!(&writes);
                Ok(quote! {
                     #[automatically_derived]
                     impl Streamable for #name {
