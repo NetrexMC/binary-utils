@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types)]
 
-use byteorder::{ReadBytesExt, WriteBytesExt, BE, LE};
+use byteorder::ReadBytesExt;
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::{From, Into};
 use std::io;

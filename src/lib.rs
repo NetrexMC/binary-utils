@@ -1,13 +1,13 @@
 // #![feature(log_syntax)]
 
-use std::{convert::TryInto, net::SocketAddr};
 use std::io;
 use std::net::{IpAddr, Ipv6Addr, SocketAddrV6};
+use std::{convert::TryInto, net::SocketAddr};
 
 pub use bin_macro::*;
 
-use std::io::{Cursor, Write, Read};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use std::io::{Cursor, Read, Write};
 
 pub mod u24;
 pub mod util;
@@ -107,7 +107,6 @@ impl_streamable_vec_primitive!(i32);
 impl_streamable_vec_primitive!(i64);
 impl_streamable_vec_primitive!(i128);
 
-
 // implements bools
 impl Streamable for bool {
     fn parse(&self) -> Vec<u8> {
@@ -123,27 +122,29 @@ impl Streamable for bool {
 
 impl Streamable for String {
     fn parse(&self) -> Vec<u8> {
-         let mut buffer = Vec::<u8>::new();
-         buffer.write_u16::<BigEndian>(self.len() as u16).unwrap();
-         buffer.write_all(self.as_bytes()).unwrap();
-         buffer
+        let mut buffer = Vec::<u8>::new();
+        buffer.write_u16::<BigEndian>(self.len() as u16).unwrap();
+        buffer.write_all(self.as_bytes()).unwrap();
+        buffer
     }
 
     fn compose(source: &[u8], position: &mut usize) -> Self {
-         let mut stream = Cursor::new(source);
-         stream.set_position(position.clone() as u64);
-         // Maybe do this in the future?
-         let len: usize = stream.read_u16::<BigEndian>().unwrap().into();
+        let mut stream = Cursor::new(source);
+        stream.set_position(position.clone() as u64);
+        // Maybe do this in the future?
+        let len: usize = stream.read_u16::<BigEndian>().unwrap().into();
+        *position = (stream.position() as usize) + len;
 
-         unsafe {
-              // todo: Remove this nasty hack.
-              // todo: The hack being, remove the 2 from indexing on read_short
-              // todo: And utilize stream.
-              String::from_utf8_unchecked(stream.get_ref()[2..len + stream.position() as usize].to_vec())
-         }
+        unsafe {
+            // todo: Remove this nasty hack.
+            // todo: The hack being, remove the 2 from indexing on read_short
+            // todo: And utilize stream.
+            String::from_utf8_unchecked(
+                stream.get_ref()[2..len + stream.position() as usize].to_vec(),
+            )
+        }
     }
 }
-
 
 impl Streamable for SocketAddr {
     fn parse(&self) -> Vec<u8> {
@@ -157,9 +158,11 @@ impl Streamable for SocketAddr {
                     let mask = u8::from_str_radix(part, 10).unwrap();
                     stream.write_u8(mask).unwrap();
                 }
-                stream.write_u16::<BigEndian>(self.port()).expect("Could not write port to stream.");
                 stream
-            },
+                    .write_u16::<BigEndian>(self.port())
+                    .expect("Could not write port to stream.");
+                stream
+            }
             Self::V6(addr) => {
                 stream.write_u8(6).unwrap();
                 // family? or length??
@@ -187,8 +190,9 @@ impl Streamable for SocketAddr {
                 let parts = &source[from..to];
                 stream.set_position(to as u64);
                 let port = stream.read_u16::<BigEndian>().unwrap();
+                *position = stream.position() as usize;
                 SocketAddr::new(IpAddr::from([parts[0], parts[1], parts[2], parts[3]]), port)
-            },
+            }
             6 => {
                 let _family = stream.read_u16::<BigEndian>().unwrap();
                 let port = stream.read_u16::<BigEndian>().unwrap();
@@ -211,9 +215,10 @@ impl Streamable for SocketAddr {
                     Ipv6Addr::new(a, b, c, d, e, f, g, h)
                 };
                 let scope = stream.read_u32::<BigEndian>().unwrap();
+                *position = stream.position() as usize;
                 SocketAddr::from(SocketAddrV6::new(address, port, flow, scope))
-            },
-            _ => panic!("Unknown Address type!")
+            }
+            _ => panic!("Unknown Address type!"),
         }
         //  let addr_type = self.read_byte();
         //           if addr_type == 4 {
