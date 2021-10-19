@@ -1,8 +1,8 @@
 // #![feature(log_syntax)]
 
 use std::io;
-use std::net::{IpAddr, Ipv6Addr, SocketAddrV6};
-use std::{convert::TryInto, net::SocketAddr};
+use std::convert::{From, Into, TryInto};
+use std::net::{IpAddr, Ipv6Addr, SocketAddrV6, SocketAddr};
 
 pub use bin_macro::*;
 
@@ -36,15 +36,22 @@ where
     }
 
     fn compose(source: &[u8], position: &mut usize) -> Self {
-        // if the source is expected to be LE we can swap it
+        // If the source is expected to be LE we can swap it to BE bytes
+        // Doing this makes the byte stream officially BE.
         // hehe...
         let stream = reverse_vec(source.to_vec());
         LE(T::compose(&stream[..], position))
     }
 }
 
+impl<T> LE<T> {
+    pub fn inner(self) -> T {
+        self.0
+    }
+}
+
 /// Reverses the bytes in a given vector
-fn reverse_vec(bytes: Vec<u8>) -> Vec<u8> {
+pub fn reverse_vec(bytes: Vec<u8>) -> Vec<u8> {
     let mut ret: Vec<u8> = Vec::new();
 
     for x in (0..bytes.len()).rev() {
@@ -255,31 +262,29 @@ impl Streamable for SocketAddr {
     }
 }
 
-// impl<T> Streamable for Vec<T>
-// where
-//     T: Streamable {
-//     fn write(&self) -> Vec<u8> {
-//         // write the length as a varint
-//         let mut v: Vec<u8> = Vec::new();
-//         v.write_all(&VarInt(v.len() as u32).to_be_bytes()[..]).unwrap();
-//         for x in self.iter() {
-//             v.extend(x.write().iter());
-//         }
-//         v
-//     }
+/// Writes a vector whose length is written with a short
+impl Streamable for Vec<String> {
+    fn parse(&self) -> Vec<u8> {
+        // write the length as a varint
+        let mut v: Vec<u8> = Vec::new();
+        v.write_u16::<BigEndian>(v.len() as u16).unwrap();
+        for x in self.iter() {
+            v.extend(LE(x.clone()).parse().iter());
+        }
+        v
+    }
 
-//     fn read(source: &[u8], position: &mut usize) -> Self {
-//         // read a var_int
-//         let mut ret: Vec<T> = Vec::new();
-//         let varint = VarInt::<u32>::from_be_bytes(source);
-//         let length: u32 = varint.into();
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        // read a var_int
+        let mut stream = Cursor::new(source);
+        let mut ret: Vec<LE<String>> = Vec::new();
+        let length = stream.read_u16::<BigEndian>().unwrap();
 
-//         *position += varint.get_byte_length() as usize;
-
-//         // read each length
-//         for _ in 0..length {
-//             ret.push(T::read(&source, position));
-//         }
-//         ret
-//     }
-// }
+        *position = stream.position() as usize;
+        // read each length
+        for _ in 0..length {
+            ret.push(LE::<String>::compose(&source, position));
+        }
+        ret.iter().map(|v| v.0.clone()).collect()
+    }
+}

@@ -1,5 +1,5 @@
-// #![feature(trace_macros)]
-// trace_macros!(true);
+#![feature(trace_macros)]
+trace_macros!(true);
 
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
