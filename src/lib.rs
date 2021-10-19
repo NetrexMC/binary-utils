@@ -1,8 +1,8 @@
 // #![feature(log_syntax)]
 
-use std::io;
 use std::convert::{From, Into, TryInto};
-use std::net::{IpAddr, Ipv6Addr, SocketAddrV6, SocketAddr};
+use std::io;
+use std::net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6};
 
 pub use bin_macro::*;
 
@@ -31,7 +31,8 @@ pub struct LE<T>(pub T);
 
 impl<T> Streamable for LE<T>
 where
-    T: Streamable {
+    T: Streamable,
+{
     fn parse(&self) -> Vec<u8> {
         reverse_vec(self.0.parse())
     }
@@ -86,7 +87,9 @@ macro_rules! impl_streamable_primitive {
 impl_streamable_primitive!(u8);
 impl_streamable_primitive!(u16);
 impl_streamable_primitive!(u32);
+impl_streamable_primitive!(f32);
 impl_streamable_primitive!(u64);
+impl_streamable_primitive!(f64);
 impl_streamable_primitive!(u128);
 impl_streamable_primitive!(i8);
 impl_streamable_primitive!(i16);
@@ -131,6 +134,8 @@ macro_rules! impl_streamable_vec_primitive {
 impl_streamable_vec_primitive!(u8);
 impl_streamable_vec_primitive!(u16);
 impl_streamable_vec_primitive!(u32);
+impl_streamable_vec_primitive!(f32);
+impl_streamable_vec_primitive!(f64);
 impl_streamable_vec_primitive!(u64);
 impl_streamable_vec_primitive!(u128);
 impl_streamable_vec_primitive!(i8);
@@ -266,7 +271,8 @@ impl Streamable for SocketAddr {
 /// Writes a vector whose length is written with a short
 impl<T> Streamable for Vec<LE<T>>
 where
-    T: Streamable {
+    T: Streamable,
+{
     fn parse(&self) -> Vec<u8> {
         // write the length as a varint
         let mut v: Vec<u8> = Vec::new();

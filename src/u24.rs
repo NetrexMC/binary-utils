@@ -170,6 +170,8 @@ impl_primitive_u24!(u8);
 impl_primitive_u24!(u16);
 impl_primitive_u24!(u32);
 impl_primitive_u24!(u64);
+impl_primitive_u24!(f32);
+impl_primitive_u24!(f64);
 impl_primitive_u24!(u128);
 impl_primitive_u24!(i8);
 impl_primitive_u24!(i16);
