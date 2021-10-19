@@ -26,6 +26,7 @@ pub trait Streamable {
 }
 
 /// Little Endian Encoding
+#[derive(Debug, Clone, Copy)]
 pub struct LE<T>(pub T);
 
 impl<T> Streamable for LE<T>
@@ -263,13 +264,15 @@ impl Streamable for SocketAddr {
 }
 
 /// Writes a vector whose length is written with a short
-impl Streamable for Vec<String> {
+impl<T> Streamable for Vec<LE<T>>
+where
+    T: Streamable {
     fn parse(&self) -> Vec<u8> {
         // write the length as a varint
         let mut v: Vec<u8> = Vec::new();
-        v.write_u16::<BigEndian>(v.len() as u16).unwrap();
+        v.write_u16::<BigEndian>(self.len() as u16).unwrap();
         for x in self.iter() {
-            v.extend(LE(x.clone()).parse().iter());
+            v.extend(x.parse().iter());
         }
         v
     }
@@ -277,14 +280,13 @@ impl Streamable for Vec<String> {
     fn compose(source: &[u8], position: &mut usize) -> Self {
         // read a var_int
         let mut stream = Cursor::new(source);
-        let mut ret: Vec<LE<String>> = Vec::new();
+        let mut ret: Vec<LE<T>> = Vec::new();
         let length = stream.read_u16::<BigEndian>().unwrap();
-
         *position = stream.position() as usize;
         // read each length
         for _ in 0..length {
-            ret.push(LE::<String>::compose(&source, position));
+            ret.push(LE::<T>::compose(&source[*position..], &mut 0));
         }
-        ret.iter().map(|v| v.0.clone()).collect()
+        ret
     }
 }
