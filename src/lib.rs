@@ -155,7 +155,7 @@ impl Streamable for SocketAddr {
                 let partstr = self.to_string();
                 let parts: Vec<&str> = partstr.split(".").collect();
                 for part in parts {
-                    let mask = u8::from_str_radix(part, 10).unwrap();
+                    let mask = u8::from_str_radix(part, 10).unwrap_or(0);
                     stream.write_u8(mask).unwrap();
                 }
                 stream
@@ -203,14 +203,14 @@ impl Streamable for SocketAddr {
                 let address = {
                     let mut s = Cursor::new(parts);
                     let (a, b, c, d, e, f, g, h) = (
-                        s.read_u16::<BigEndian>().unwrap(),
-                        s.read_u16::<BigEndian>().unwrap(),
-                        s.read_u16::<BigEndian>().unwrap(),
-                        s.read_u16::<BigEndian>().unwrap(),
-                        s.read_u16::<BigEndian>().unwrap(),
-                        s.read_u16::<BigEndian>().unwrap(),
-                        s.read_u16::<BigEndian>().unwrap(),
-                        s.read_u16::<BigEndian>().unwrap(),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
                     );
                     Ipv6Addr::new(a, b, c, d, e, f, g, h)
                 };
