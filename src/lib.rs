@@ -1,4 +1,4 @@
-#![feature(log_syntax)]
+// #![feature(log_syntax)]
 
 use std::convert::{From, Into, TryInto};
 use std::io;
@@ -15,6 +15,7 @@ pub mod varint;
 pub use self::{u24::*, varint::*};
 
 pub type Stream = io::Cursor<Vec<u8>>;
+
 
 pub trait Streamable {
     /// Writes `self` to the given buffer.
