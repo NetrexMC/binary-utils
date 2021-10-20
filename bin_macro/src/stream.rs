@@ -61,7 +61,6 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                 match &variant.fields {
                     Fields::Unit => {
                         // writers
-                        dbg!(&enum_ty);
                         writers.push(quote!(Self::#var_name => (#discrim as #enum_ty).parse(),));
                         // readers
                         readers.push(quote!(#discrim => Self::#var_name,));
