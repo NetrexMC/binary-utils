@@ -1,4 +1,4 @@
-// #![feature(log_syntax)]
+#![feature(log_syntax)]
 
 use std::convert::{From, Into, TryInto};
 use std::io;
