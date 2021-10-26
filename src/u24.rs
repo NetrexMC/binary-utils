@@ -8,6 +8,7 @@ use std::ops::{Add, BitOr, Div, Mul, Sub};
 
 use crate::Streamable;
 /// Base Implementation for a u24
+/// A u24 is 3 bytes (24 bits) wide number.
 #[derive(Clone, Copy, Debug)]
 pub struct u24(u32); // inner is validated
 

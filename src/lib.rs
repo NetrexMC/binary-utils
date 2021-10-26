@@ -16,7 +16,34 @@ pub use self::{u24::*, varint::*};
 
 pub type Stream = io::Cursor<Vec<u8>>;
 
-
+/// A trait to parse and unparse header structs from a given buffer.
+///
+/// **Example:**
+/// ```rust notest
+/// struct Foo {
+///     bar: u8,
+///     foo_bar: u16
+/// }
+///
+/// impl Streamable for Foo {
+///     fn parse(&self) -> Vec<u8> {
+///         use std::io::Write;
+///         let mut stream = Vec::<u8>::new();
+///         stream.write_all(bar.parse()[..]);
+///         stream.write_all(bar.parse()[..]);
+///         stream
+///     }
+///
+///     fn compose(source: &[u8], position: &mut usize) -> Self {
+///         // Streamable is implemented for all primitives, so we can
+///         // just use this implementation to read our properties.
+///         Self {
+///             bar: u8::compose(&source, &mut position),
+///             foo_bar: u16::compose(&source, &mut position)
+///         }
+///     }
+/// }
+/// ```
 pub trait Streamable {
     /// Writes `self` to the given buffer.
     fn parse(&self) -> Vec<u8>;
@@ -26,7 +53,21 @@ pub trait Streamable {
         Self: Sized;
 }
 
-/// Little Endian Encoding
+/// Little Endian Type
+///
+/// **Notice:**
+/// This struct assumes the incoming buffer is BE and needs to be transformed.
+///
+/// For LE decoding in BE streams use:
+/// ```rust notest
+/// fn read_u16_le(source: &[u8], offset: &mut usize) {
+///     // get the size of your type, in this case it's 2 bytes.
+///     let be_source = &source[offset..2];
+///     *offset += 2;
+///     // now we can form the little endian
+///     return LE::<u16>::compose(&be_source, &mut 0);
+/// }
+/// ```
 #[derive(Debug, Clone, Copy)]
 pub struct LE<T>(pub T);
 
@@ -41,7 +82,8 @@ where
     fn compose(source: &[u8], position: &mut usize) -> Self {
         // If the source is expected to be LE we can swap it to BE bytes
         // Doing this makes the byte stream officially BE.
-        // hehe...
+        // We actually need to do some hacky stuff here,
+        // we need to get the size of `T` (in bytes)
         let stream = reverse_vec(source.to_vec());
         LE(T::compose(&stream[..], position))
     }
