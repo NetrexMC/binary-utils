@@ -1,6 +1,12 @@
 [package]
 name = "binary_utils"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Bavfalcon9 <olybear9@gmail.com>"]
 edition = "2018"
 include = ["src/**/*", "README.md"]
+
+[dependencies]
+byteorder = "1.4.3"
+bin_macro = { path = "./bin_macro" }
+
+[features]

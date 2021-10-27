@@ -1,126 +1,380 @@
-#![allow(unused_imports, dead_code)]
-pub mod buffer;
-pub mod stream;
+// #![feature(log_syntax)]
 
-pub use buffer::*;
-pub use stream::*;
+use std::any::type_name;
+use std::convert::{From, Into, TryInto};
+use std::io;
+use std::net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6};
 
-pub trait StreamEncoder {
-     fn into_stream(&self) -> BinaryStream;
+pub use bin_macro::*;
+
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use std::io::{Cursor, Read, Write};
+
+pub mod u24;
+pub mod varint;
+
+pub use self::{u24::*, varint::*};
+
+pub type Stream = io::Cursor<Vec<u8>>;
+
+macro_rules! includes {
+    ($var: ident, $method: ident, $values: expr) => {{
+        let v = &$values;
+        v.iter().filter(|&v| $var.$method(v)).count() > 0
+    }};
 }
 
-pub trait StreamDecoder {
-     fn from_stream(stream: BinaryStream) -> Self;
+/// A trait to parse and unparse header structs from a given buffer.
+///
+/// **Example:**
+/// ```rust ignore
+/// struct Foo {
+///     bar: u8,
+///     foo_bar: u16
+/// }
+///
+/// impl Streamable for Foo {
+///     fn parse(&self) -> Vec<u8> {
+///         use std::io::Write;
+///         let mut stream = Vec::<u8>::new();
+///         stream.write_all(bar.parse()[..]);
+///         stream.write_all(bar.parse()[..]);
+///         stream
+///     }
+///
+///     fn compose(source: &[u8], position: &mut usize) -> Self {
+///         // Streamable is implemented for all primitives, so we can
+///         // just use this implementation to read our properties.
+///         Self {
+///             bar: u8::compose(&source, &mut position),
+///             foo_bar: u16::compose(&source, &mut position)
+///         }
+///     }
+/// }
+/// ```
+pub trait Streamable {
+    /// Writes `self` to the given buffer.
+    fn parse(&self) -> Vec<u8>;
+    /// Reads `self` from the given buffer.
+    fn compose(source: &[u8], position: &mut usize) -> Self
+    where
+        Self: Sized;
 }
 
-#[cfg(test)]
-mod tests {
-     use crate::*;
+/// Little Endian Type
+///
+/// **Notice:**
+/// This struct assumes the incoming buffer is BE and needs to be transformed.
+///
+/// For LE decoding in BE streams use:
+/// ```rust ignore
+/// fn read_u16_le(source: &[u8], offset: &mut usize) {
+///     // get the size of your type, in this case it's 2 bytes.
+///     let be_source = &source[offset..2];
+///     *offset += 2;
+///     // now we can form the little endian
+///     return LE::<u16>::compose(&be_source, &mut 0);
+/// }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct LE<T>(pub T);
 
-     #[test]
-     fn read_write_read_write_varint() {
-          let mut stream = stream::BinaryStream::new();
-          stream.write_uvar_long(32432);
-          dbg!(stream.clone());
-          stream.set_offset(0);
-          assert_eq!(stream.read_uvar_long(), 32432);
-     }
+impl<T> Streamable for LE<T>
+where
+    T: Streamable + Sized,
+{
+    fn parse(&self) -> Vec<u8> {
+        reverse_vec(self.0.parse())
+    }
 
-     #[test]
-     fn slice_test() {
-          let mut stream = stream::BinaryStream::init(&[132, 0, 0, 0, 64, 0, 144, 0, 0, 0, 9, 144, 81, 212, 113, 24, 50, 101, 140, 0, 0, 0, 0, 4, 43, 112, 111, 0].to_vec());
-          stream.read_byte();
-          stream.read_triad();
-          let offset = stream.get_offset();
-          let mut clamped = stream.clamp(offset, None);
-          assert_eq!(clamped.read_byte(), 64)
-     }
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        // If the source is expected to be LE we can swap it to BE bytes
+        // Doing this makes the byte stream officially BE.
+        // We actually need to do some hacky stuff here,
+        // we need to get the size of `T` (in bytes)
+        let stream = {
+            // if we can get the value of the type we do so here.
+            let name = type_name::<T>();
 
-     #[test]
-     fn test_read_short() {
-          let mut bin_stream = stream::BinaryStream::new();
-          bin_stream.write_short(12);
+            if includes!(
+                name,
+                contains,
+                [
+                    "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32",
+                    "f64"
+                ]
+            ) {
+                reverse_vec(source[*position..(*position + ::std::mem::size_of::<T>())].to_vec())
+            } else {
+                reverse_vec(source[*position..].to_vec())
+            }
+        };
+        LE(T::compose(&stream[..], position))
+    }
+}
 
-          print!("{:?}", bin_stream);
-     }
+impl<T> LE<T> {
+    pub fn inner(self) -> T {
+        self.0
+    }
+}
 
-     #[test]
-     fn test_write_byte() {
-          let okay = vec![10];
-          let mut stream = stream::BinaryStream::new();
-          stream.write_byte(10);
-          assert_eq!(okay, stream.get_buffer());
-     }
+/// Reverses the bytes in a given vector
+pub fn reverse_vec(bytes: Vec<u8>) -> Vec<u8> {
+    let mut ret: Vec<u8> = Vec::new();
 
-     #[test]
-     fn test_read_byte() {
-          let raw = vec![0, 10, 0, 13, 10];
-          let mut stream = stream::BinaryStream::init(&raw);
-          stream.read_short();
-          stream.read_short();
-          println!("{}", stream.get_offset());
-          let is_ten = stream.read_byte();
-          assert_eq!(is_ten, 10);
-     }
+    for x in (0..bytes.len()).rev() {
+        ret.push(*bytes.get(x).unwrap());
+    }
+    ret
+}
 
-     #[test]
-     fn read_slice_panic() {
-          let raw = vec![7, 0, 255, 255, 0, 254, 254, 254, 254, 253, 253, 253, 253, 18, 52, 86, 120, 4, 128, 255, 255, 254, 74, 188, 2, 65, 140, 131, 72, 201, 65, 219, 142, 52];
-          let mut stream = stream::BinaryStream::init(&raw);
-          stream.read_byte();
-          assert_eq!([0, 255, 255, 0].to_vec(), stream.read_slice(Some(4)));
-          assert_eq!(stream.get_offset(), 5);
-     }
+/// Big Endian Encoding
+pub struct BE<T>(pub T);
 
-     #[test]
-     fn test_read_triad() {
-          let buf = [ 233, 9, 27 ];
-          // we need to read the first three bytes
-          let mut bin = stream::BinaryStream::init(&buf.to_vec());
-          let num = bin.read_triad();
+macro_rules! impl_streamable_primitive {
+    ($ty: ty) => {
+        impl Streamable for $ty {
+            fn parse(&self) -> Vec<u8> {
+                self.to_be_bytes().to_vec()
+            }
 
-          assert_eq!(1772009, num);
-     }
+            fn compose(source: &[u8], position: &mut usize) -> Self {
+                // get the size
+                let size = ::std::mem::size_of::<$ty>();
+                let range = position.clone()..(size + position.clone());
+                let data = <$ty>::from_be_bytes(source.get(range).unwrap().try_into().unwrap());
+                *position += size;
+                data
+            }
+        }
 
-     #[test]
-     fn test_read_triad_zero() {
-          let buf = [ 0, 0, 0 ];
-          let mut bin = stream::BinaryStream::init(&buf.to_vec());
-          let num = bin.read_triad();
+        // impl Streamable for LE<$ty> {
+        //     fn parse(&self) -> Vec<u8> {
+        //         reverse_vec(self.0.parse())
+        //     }
 
-          assert_eq!(num, 0);
-     }
+        //     fn compose(source: &[u8], position: &mut usize) -> Self {
+        //         // If the source is expected to be LE we can swap it to BE bytes
+        //         // Doing this makes the byte stream officially BE.
+        //         // We actually need to do some hacky stuff here,
+        //         // we need to get the size of `T` (in bytes)
+        //         let stream = reverse_vec(source[*position..(*position + ::std::mem::size_of::<$ty>())].to_vec());
+        //         LE(<$ty>::compose(&stream[..], position))
+        //     }
+        // }
+    };
+}
 
-     #[test]
-     fn test_read_index_at_1() {
-          let buf = [144, 0, 0, 0, 9, 143, 162, 116, 15, 10, 144, 162, 92, 0, 0, 0, 0, 21, 47, 173, 144, 0];
-          let mut bin = stream::BinaryStream::init(&buf.to_vec());
-          bin.read_byte();
-          bin.read_triad();
-     }
+impl_streamable_primitive!(u8);
+impl_streamable_primitive!(u16);
+impl_streamable_primitive!(u32);
+impl_streamable_primitive!(f32);
+impl_streamable_primitive!(u64);
+impl_streamable_primitive!(f64);
+impl_streamable_primitive!(u128);
+impl_streamable_primitive!(i8);
+impl_streamable_primitive!(i16);
+impl_streamable_primitive!(i32);
+impl_streamable_primitive!(i64);
+impl_streamable_primitive!(i128);
 
-     #[test]
-     fn test_read_var_int() {
-          let buf = [236, 189, 203, 118, 242, 202, 214, 247, 247, 126, 189, 36, 151, 241, 166, 155, 253, 14, 73, 128, 183, 73, 207, 128, 132, 193, 72, 24, 161, 3, 82, 70, 198, 30, 128, 216, 6, 36, 48, 182, 49, 167, 140];
-          let mut bin = stream::BinaryStream::init(&buf.to_vec());
-          let v = bin.read_var_int();
-          assert_eq!(v, 0)
-     }
+macro_rules! impl_streamable_vec_primitive {
+    ($ty: ty) => {
+        impl Streamable for Vec<$ty> {
+            fn parse(&self) -> Vec<u8> {
+                use ::std::io::Write;
+                // write the length as a varint
+                let mut v: Vec<u8> = Vec::new();
+                v.write_all(&VarInt(v.len() as u32).to_be_bytes()[..])
+                    .unwrap();
+                for x in self.iter() {
+                    v.extend(x.parse().iter());
+                }
+                v
+            }
 
-     #[test]
-     fn test_write_triad() {
-          let okay = vec![0, 0, 0];
-          let mut bin = stream::BinaryStream::new();
-          bin.write_triad(0);
-          assert_eq!(okay, bin.get_buffer());
-     }
+            fn compose(source: &[u8], position: &mut usize) -> Self {
+                // use ::std::io::Read;
+                // read a var_int
+                let mut ret: Vec<$ty> = Vec::new();
+                let varint = VarInt::<u32>::from_be_bytes(source);
+                let length: u32 = varint.into();
 
-     #[test]
-     fn test_read_int() {
-          let buf = [ 0, 0, 0, 7 ];
-          let mut bin = stream::BinaryStream::init(&buf.to_vec());
-          let num = bin.read_int();
+                *position += varint.get_byte_length() as usize;
 
-          assert_eq!(7, num);
-     }
+                // read each length
+                for _ in 0..length {
+                    ret.push(<$ty>::compose(&source, position));
+                }
+                ret
+            }
+        }
+    };
+}
+
+impl_streamable_vec_primitive!(u8);
+impl_streamable_vec_primitive!(u16);
+impl_streamable_vec_primitive!(u32);
+impl_streamable_vec_primitive!(f32);
+impl_streamable_vec_primitive!(f64);
+impl_streamable_vec_primitive!(u64);
+impl_streamable_vec_primitive!(u128);
+impl_streamable_vec_primitive!(i8);
+impl_streamable_vec_primitive!(i16);
+impl_streamable_vec_primitive!(i32);
+impl_streamable_vec_primitive!(i64);
+impl_streamable_vec_primitive!(i128);
+
+// implements bools
+impl Streamable for bool {
+    fn parse(&self) -> Vec<u8> {
+        vec![if *self { 1 } else { 0 }]
+    }
+
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        let v = source[*position] == 1;
+        *position += 1;
+        v
+    }
+}
+
+impl Streamable for String {
+    fn parse(&self) -> Vec<u8> {
+        let mut buffer = Vec::<u8>::new();
+        buffer.write_u16::<BigEndian>(self.len() as u16).unwrap();
+        buffer.write_all(self.as_bytes()).unwrap();
+        buffer
+    }
+
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        let mut stream = Cursor::new(source);
+        stream.set_position(position.clone() as u64);
+        // Maybe do this in the future?
+        let len: usize = stream.read_u16::<BigEndian>().unwrap().into();
+        *position = (stream.position() as usize) + len;
+
+        unsafe {
+            // todo: Remove this nasty hack.
+            // todo: The hack being, remove the 2 from indexing on read_short
+            // todo: And utilize stream.
+            String::from_utf8_unchecked(
+                stream.get_ref()[2..len + stream.position() as usize].to_vec(),
+            )
+        }
+    }
+}
+
+impl Streamable for SocketAddr {
+    fn parse(&self) -> Vec<u8> {
+        let mut stream = Vec::<u8>::new();
+        match *self {
+            Self::V4(_) => {
+                stream.write_u8(4).unwrap();
+                let partstr = self.to_string();
+                let parts: Vec<&str> = partstr.split(".").collect();
+                for part in parts {
+                    let mask = u8::from_str_radix(part, 10).unwrap_or(0);
+                    stream.write_u8(mask).unwrap();
+                }
+                stream
+                    .write_u16::<BigEndian>(self.port())
+                    .expect("Could not write port to stream.");
+                stream
+            }
+            Self::V6(addr) => {
+                stream.write_u8(6).unwrap();
+                // family? or length??
+                stream.write_u16::<BigEndian>(0).unwrap();
+                // port
+                stream.write_u16::<BigEndian>(self.port()).unwrap();
+                // flow
+                stream.write_u32::<BigEndian>(addr.flowinfo()).unwrap();
+                // actual address here
+                stream.write(&addr.ip().octets()).unwrap();
+                // scope
+                stream.write_u32::<BigEndian>(addr.scope_id()).unwrap();
+                stream
+            }
+        }
+    }
+
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        let mut stream = Cursor::new(source);
+        stream.set_position(*position as u64);
+        match stream.read_u8().unwrap() {
+            4 => {
+                let from = stream.position() as usize;
+                let to = stream.position() as usize + 4;
+                let parts = &source[from..to];
+                stream.set_position(to as u64);
+                let port = stream.read_u16::<BigEndian>().unwrap();
+                *position = stream.position() as usize;
+                SocketAddr::new(IpAddr::from([parts[0], parts[1], parts[2], parts[3]]), port)
+            }
+            6 => {
+                let _family = stream.read_u16::<BigEndian>().unwrap();
+                let port = stream.read_u16::<BigEndian>().unwrap();
+                let flow = stream.read_u32::<BigEndian>().unwrap();
+                let mut parts: [u8; 16] = [0; 16];
+                stream.read(&mut parts).unwrap();
+                // we need to read parts into address
+                let address = {
+                    let mut s = Cursor::new(parts);
+                    let (a, b, c, d, e, f, g, h) = (
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                        s.read_u16::<BigEndian>().unwrap_or(0),
+                    );
+                    Ipv6Addr::new(a, b, c, d, e, f, g, h)
+                };
+                let scope = stream.read_u32::<BigEndian>().unwrap();
+                *position = stream.position() as usize;
+                SocketAddr::from(SocketAddrV6::new(address, port, flow, scope))
+            }
+            _ => panic!("Unknown Address type!"),
+        }
+        //  let addr_type = self.read_byte();
+        //           if addr_type == 4 {
+        //                let parts = self.read_slice(Some(4 as usize));
+        //                let port = self.read_ushort();
+        //                SocketAddr::new(IpAddr::from([parts[0], parts[1], parts[2], parts[3]]), port)
+        //           } else {
+        //                SocketAddr::new(IpAddr::from([0, 0, 0, 0]), 0)
+        //           }
+    }
+}
+
+/// Writes a vector whose length is written with a short
+impl<T> Streamable for Vec<LE<T>>
+where
+    T: Streamable,
+{
+    fn parse(&self) -> Vec<u8> {
+        // write the length as a varint
+        let mut v: Vec<u8> = Vec::new();
+        v.write_u16::<BigEndian>(self.len() as u16).unwrap();
+        for x in self.iter() {
+            v.extend(x.parse().iter());
+        }
+        v
+    }
+
+    fn compose(source: &[u8], position: &mut usize) -> Self {
+        // read a var_int
+        let mut stream = Cursor::new(source);
+        let mut ret: Vec<LE<T>> = Vec::new();
+        let length = stream.read_u16::<BigEndian>().unwrap();
+        *position = stream.position() as usize;
+        // read each length
+        for _ in 0..length {
+            ret.push(LE::<T>::compose(&source[*position..], &mut 0));
+        }
+        ret
+    }
 }
