@@ -1,5 +1,6 @@
 // #![feature(log_syntax)]
 
+use std::any::type_name;
 use std::convert::{From, Into, TryInto};
 use std::io;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6};
@@ -16,10 +17,17 @@ pub use self::{u24::*, varint::*};
 
 pub type Stream = io::Cursor<Vec<u8>>;
 
+macro_rules! includes {
+    ($var: ident, $method: ident, $values: expr) => {{
+        let v = &$values;
+        v.iter().filter(|&v| $var.$method(v)).count() > 0
+    }};
+}
+
 /// A trait to parse and unparse header structs from a given buffer.
 ///
 /// **Example:**
-/// ```rust notest
+/// ```rust ignore
 /// struct Foo {
 ///     bar: u8,
 ///     foo_bar: u16
@@ -59,7 +67,7 @@ pub trait Streamable {
 /// This struct assumes the incoming buffer is BE and needs to be transformed.
 ///
 /// For LE decoding in BE streams use:
-/// ```rust notest
+/// ```rust ignore
 /// fn read_u16_le(source: &[u8], offset: &mut usize) {
 ///     // get the size of your type, in this case it's 2 bytes.
 ///     let be_source = &source[offset..2];
@@ -73,7 +81,7 @@ pub struct LE<T>(pub T);
 
 impl<T> Streamable for LE<T>
 where
-    T: Streamable,
+    T: Streamable + Sized,
 {
     fn parse(&self) -> Vec<u8> {
         reverse_vec(self.0.parse())
@@ -84,7 +92,23 @@ where
         // Doing this makes the byte stream officially BE.
         // We actually need to do some hacky stuff here,
         // we need to get the size of `T` (in bytes)
-        let stream = reverse_vec(source.to_vec());
+        let stream = {
+            // if we can get the value of the type we do so here.
+            let name = type_name::<T>();
+
+            if includes!(
+                name,
+                contains,
+                [
+                    "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32",
+                    "f64"
+                ]
+            ) {
+                reverse_vec(source[*position..(*position + ::std::mem::size_of::<T>())].to_vec())
+            } else {
+                reverse_vec(source[*position..].to_vec())
+            }
+        };
         LE(T::compose(&stream[..], position))
     }
 }
@@ -124,6 +148,21 @@ macro_rules! impl_streamable_primitive {
                 data
             }
         }
+
+        // impl Streamable for LE<$ty> {
+        //     fn parse(&self) -> Vec<u8> {
+        //         reverse_vec(self.0.parse())
+        //     }
+
+        //     fn compose(source: &[u8], position: &mut usize) -> Self {
+        //         // If the source is expected to be LE we can swap it to BE bytes
+        //         // Doing this makes the byte stream officially BE.
+        //         // We actually need to do some hacky stuff here,
+        //         // we need to get the size of `T` (in bytes)
+        //         let stream = reverse_vec(source[*position..(*position + ::std::mem::size_of::<$ty>())].to_vec());
+        //         LE(<$ty>::compose(&stream[..], position))
+        //     }
+        // }
     };
 }
 

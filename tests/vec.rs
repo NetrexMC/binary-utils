@@ -14,6 +14,7 @@ fn test_le_vec() {
     // LE bytes for "Netrex"
     let le_bytes_netrex: Vec<u8> = vec![120, 101, 114, 116, 101, 78, 6, 0];
     let str_bytes = LE("Netrex".to_string());
+    println!("{:?}", str_bytes.parse());
 
     assert_eq!(str_bytes.parse(), le_bytes_netrex);
 
@@ -23,6 +24,7 @@ fn test_le_vec() {
     // Vectors store length {stream, stream }
     // where "stream" in this case is [length, string bytes]
     let vector = test.parse();
+    println!("{:?}", vector);
     let restored = Vec::<LE<String>>::compose(&vector[..], &mut 0);
     assert_eq!(restored[0].clone().inner(), str_bytes.inner())
 }
