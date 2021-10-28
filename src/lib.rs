@@ -109,7 +109,17 @@ where
                 reverse_vec(source[*position..].to_vec())
             }
         };
-        LE(T::compose(&stream[..], position))
+
+        // todo Properly implement LE streams
+        // todo Get rid of this NASTY hack!
+        // we need to get the stream releative to the current source, and "inject" into the current source.
+        // we can do this by getting the position and the length of the stream.
+        let mut hacked_stream = Vec::<u8>::new();
+        hacked_stream.write_all(&source[..*position]).unwrap();
+        // now we write the rest of our changed stream
+        hacked_stream.write_all(&stream).unwrap();
+
+        LE(T::compose(&hacked_stream[..], position))
     }
 }
 
