@@ -6,6 +6,7 @@ use std::convert::{From, Into};
 use std::io;
 use std::ops::{Add, BitOr, Div, Mul, Sub};
 
+use crate::error::BinaryError;
 use crate::Streamable;
 /// Base Implementation for a u24
 /// A u24 is 3 bytes (24 bits) wide number.
@@ -38,13 +39,13 @@ impl u24 {
 
 impl Streamable for u24 {
     /// Writes `self` to the given buffer.
-    fn parse(&self) -> Vec<u8> {
-        self.to_be_bytes().to_vec().clone()
+    fn parse(&self) -> Result<Vec<u8>, BinaryError> {
+        Ok(self.to_be_bytes().to_vec().clone())
     }
     /// Reads `self` from the given buffer.
-    fn compose(source: &[u8], position: &mut usize) -> Self {
+    fn compose(source: &[u8], position: &mut usize) -> Result<Self, BinaryError> {
         *position += 2;
-        Self::from_be_bytes(source)
+        Ok(Self::from_be_bytes(source))
     }
 }
 
