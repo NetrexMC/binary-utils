@@ -25,6 +25,19 @@ pub enum BinaryError {
     RecoverableUnknown,
 }
 
+impl BinaryError {
+    pub fn get_message(&self) -> String {
+        match self {
+            Self::OutOfBounds(offset, length, append) => {
+                format!("Offset {} out of range for a buffer size with: {}. {}", offset, length, append)
+            },
+            Self::EOF(length) => format!("Buffer reached End Of File at offset: {}", length),
+            Self::RecoverableKnown(msg) => msg.clone(),
+            Self::RecoverableUnknown => "An interruption occurred when performing a binary operation, however this error was recovered safely.".to_string()
+        }
+    }
+}
+
 impl From<std::io::Error> for BinaryError {
     fn from(_error: std::io::Error) -> Self {
         Self::RecoverableUnknown
