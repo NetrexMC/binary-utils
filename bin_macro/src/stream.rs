@@ -16,23 +16,23 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
             Ok(quote! {
                  #[automatically_derived]
                  impl Streamable for #name {
-                      fn parse(&self) -> Vec<u8> {
+                      fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
                            use ::std::io::Write;
                            use binary_utils::varint::{VarInt, VarIntWriter};
                            use binary_utils::u24::{u24, u24Writer};
                            let mut writer = Vec::new();
                            #writes
-                           writer
+                           Ok(writer)
                       }
 
-                      fn compose(source: &[u8], position: &mut usize) -> Self {
+                      fn compose(source: &[u8], position: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
                            use ::std::io::Read;
                            use binary_utils::varint::{VarInt, VarIntReader};
                            use binary_utils::u24::{u24, u24Reader};
 
-                           Self {
+                           Ok(Self {
                                 #reads
-                           }
+                           })
                       }
                  }
             })
@@ -61,9 +61,9 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                 match &variant.fields {
                     Fields::Unit => {
                         // writers
-                        writers.push(quote!(Self::#var_name => (#discrim as #enum_ty).parse(),));
+                        writers.push(quote!(Self::#var_name => Ok((#discrim as #enum_ty).parse()?),));
                         // readers
-                        readers.push(quote!(#discrim => Self::#var_name,));
+                        readers.push(quote!(#discrim => Ok(Self::#var_name),));
                     },
                     Fields::Unnamed(_fields) => {
                         return Err(Error::new_spanned(variant, "Variant fields are not explicitly supported yet."));
@@ -78,21 +78,20 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
             Ok(quote!{
                 #[automatically_derived]
                 impl Streamable for #name {
-                    fn parse(&self) -> Vec<u8> {
+                    fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
                         match self {
                             #(#writers)*
                         }
                     }
 
-                    fn compose(source: &[u8], offset: &mut usize) -> Self {
+                    fn compose(source: &[u8], offset: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
                         // get the repr type and read it
-                        let v = <#enum_ty>::compose(source, offset);
+                        let v = <#enum_ty>::compose(source, offset)?;
 
                         match v {
                             #(#readers)*
                             _ => panic!("Will not fit in enum!")
                         }
-
                     }
                 }
             })
@@ -133,8 +132,8 @@ pub fn impl_named_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>)
 
 pub fn impl_streamable_lazy(name: &Ident, ty: &Type) -> (TokenStream, TokenStream) {
     (
-        quote! { writer.write(&self.#name.parse()[..]).unwrap(); },
-        quote!(#name: #ty::compose(&source, position)),
+        quote! { writer.write(&self.#name.parse()?[..])?; },
+        quote!(#name: #ty::compose(&source, position)?),
     )
 }
 

@@ -1,6 +1,6 @@
 // make a test
-mod macro_tests;
-mod vec;
-mod var_int;
 mod le_test;
 mod lstring;
+mod macro_tests;
+mod var_int;
+mod vec;
