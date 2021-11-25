@@ -18,13 +18,13 @@ fn test_le_vec() {
 
     assert_eq!(str_bytes.fparse(), le_bytes_netrex);
 
-    let mut test: Vec<LE::<String>> = Vec::new();
+    let mut test: Vec<LE<String>> = Vec::new();
     test.push(str_bytes.clone());
 
     // Vectors store length {stream, stream }
     // where "stream" in this case is [length, string bytes]
     let vector = test.fparse();
     println!("{:?}", vector);
-    let restored = Vec::<LE::<String>>::fcompose(&vector[..], &mut 0);
+    let restored = Vec::<LE<String>>::fcompose(&vector[..], &mut 0);
     assert_eq!(restored[0].clone().inner(), str_bytes.inner())
 }
