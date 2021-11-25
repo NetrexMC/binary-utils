@@ -34,7 +34,7 @@ fn read_string() {
 
 #[derive(BinaryStream)]
 pub struct HelloWorld {
-    data: LE::<String>,
+    data: LE<String>,
 }
 
 #[test]

@@ -133,7 +133,7 @@ pub fn impl_named_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>)
 pub fn impl_streamable_lazy(name: &Ident, ty: &Type) -> (TokenStream, TokenStream) {
     (
         quote! { writer.write(&self.#name.parse()?[..])?; },
-        quote!(#name: #ty::compose(&source, position)?),
+        quote!(#name: <#ty>::compose(&source, position)?),
     )
 }
 

@@ -1,4 +1,5 @@
-// make a test
+mod enums;
+mod format;
 mod le_test;
 mod lstring;
 mod macro_tests;
