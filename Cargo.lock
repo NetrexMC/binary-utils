@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "binary_utils"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "bin_macro",
  "byteorder",
