@@ -2,7 +2,7 @@
 name = "binary_utils"
 version = "0.2.2"
 authors = ["Bavfalcon9"]
-edition = "2018"
+edition = "2021"
 include = ["src/**/*", "README.md"]
 
 [dependencies]
