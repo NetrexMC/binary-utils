@@ -20,4 +20,9 @@ fn read_write_var_int() {
         one.0,
         VarInt::<u32>::compose(&buf_one[..], &mut 0).unwrap().0
     );
+
+    assert_eq!(
+        two.0,
+        VarInt::<u32>::compose(&buf_two[..], &mut 0).unwrap().0
+    )
 }
