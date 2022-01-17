@@ -12,10 +12,10 @@ use error::BinaryError;
 use std::io::{Cursor, Read, Write};
 
 pub mod error;
-pub mod u24;
+pub mod u24_impl;
 pub mod varint;
 
-pub use self::{u24::*, varint::*};
+pub use self::{u24_impl::*, varint::*};
 
 pub type Stream = io::Cursor<Vec<u8>>;
 

@@ -11,7 +11,7 @@ use crate::Streamable;
 /// Base Implementation for a u24
 /// A u24 is 3 bytes (24 bits) wide number.
 #[derive(Clone, Copy, Debug)]
-pub struct u24(u32); // inner is validated
+pub struct u24(pub u32); // inner is validated
 
 impl u24 {
     pub fn is_u24(num: usize) -> bool {
@@ -35,6 +35,10 @@ impl u24 {
         let bytes = self.0.to_be_bytes();
         [bytes[0], bytes[1], bytes[2]]
     }
+
+    pub fn inner(self) -> u32 {
+        self.0
+    }
 }
 
 impl Streamable for u24 {
@@ -44,8 +48,9 @@ impl Streamable for u24 {
     }
     /// Reads `self` from the given buffer.
     fn compose(source: &[u8], position: &mut usize) -> Result<Self, BinaryError> {
-        *position += 2;
-        Ok(Self::from_be_bytes(source))
+        let buf = Self::from_be_bytes(&source[*position..]);
+        *position += 3;
+        Ok(buf)
     }
 }
 

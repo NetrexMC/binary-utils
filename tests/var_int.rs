@@ -1,4 +1,5 @@
 use binary_utils::*;
+use binary_utils::Streamable;
 
 #[test]
 fn read_write_var_int() {
@@ -30,4 +31,21 @@ fn read_write_var_int() {
     let buf_game_id: Vec<u8> = vec![2, 0, 0, 0, 5];
     let int_game_id = VarInt::<u32>::compose(&buf_game_id[..], &mut 0).unwrap();
     assert_eq!(int_game_id.0, 2);
+}
+
+#[test]
+fn var_int_test_middle() {
+    // false, false, byte, varint (255), varint (1)
+    let buffer = vec![0, 0, 0, 255, 1, 0, 0];
+    let mut position = 0;
+
+    assert_eq!(
+        u24::compose(&buffer[..], &mut position).unwrap().inner(),
+        0
+    );
+
+    assert_eq!(
+        VarInt::<u32>::compose(&buffer[..], &mut position).unwrap().0,
+        255
+    );
 }

@@ -19,7 +19,7 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                       fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
                            use ::std::io::Write;
                            use binary_utils::varint::{VarInt, VarIntWriter};
-                           use binary_utils::u24::{u24, u24Writer};
+                           use binary_utils::{u24, u24Writer};
                            let mut writer = Vec::new();
                            #writes
                            Ok(writer)
@@ -28,7 +28,7 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                       fn compose(source: &[u8], position: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
                            use ::std::io::Read;
                            use binary_utils::varint::{VarInt, VarIntReader};
-                           use binary_utils::u24::{u24, u24Reader};
+                           use binary_utils::{u24, u24Reader};
 
                            Ok(Self {
                                 #reads
