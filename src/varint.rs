@@ -105,7 +105,7 @@ macro_rules! varint_impl_generic {
             }
             /// Reads `self` from the given buffer.
             fn compose(source: &[u8], position: &mut usize) -> Result<Self, crate::error::BinaryError> {
-               let v = Self::from_be_bytes(source);
+               let v = Self::from_be_bytes(&source[*position..]);
                *position += v.get_byte_length() as usize;
                Ok(v)
             }
@@ -212,7 +212,7 @@ macro_rules! varint_impl_generic64 {
             }
             /// Reads `self` from the given buffer.
             fn compose(source: &[u8], position: &mut usize) -> Result<Self, crate::error::BinaryError> {
-               let v = Self::from_be_bytes(&mut Cursor::new(source.to_vec()));
+               let v = Self::from_be_bytes(&mut Cursor::new(source[*position..].to_vec()));
                *position += v.get_byte_length() as usize;
                Ok(v)
             }

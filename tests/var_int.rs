@@ -24,5 +24,10 @@ fn read_write_var_int() {
     assert_eq!(
         two.0,
         VarInt::<u32>::compose(&buf_two[..], &mut 0).unwrap().0
-    )
+    );
+
+    // test reading
+    let buf_game_id: Vec<u8> = vec![2, 0, 0, 0, 5];
+    let int_game_id = VarInt::<u32>::compose(&buf_game_id[..], &mut 0).unwrap();
+    assert_eq!(int_game_id.0, 2);
 }
