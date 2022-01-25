@@ -1,5 +1,6 @@
 mod enums;
 mod format;
+mod io;
 mod le_test;
 mod lstring;
 mod macro_tests;

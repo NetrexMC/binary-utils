@@ -72,12 +72,12 @@ macro_rules! varint_impl_generic {
                  VarInt::<$ty>(value)
             }
 
-            pub fn from_be_bytes(bstream: &[u8]) -> Self {
+            pub fn from_be_bytes(bstream: &[u8]) -> Result<Self, crate::error::BinaryError> {
                 let mut stream = Cursor::new(bstream);
                 let mut value: $ty  = 0;
 
                 for x in (0..35).step_by(7) {
-                   let byte = stream.read_u8().unwrap();
+                   let byte = stream.read_u8()?;
                    value |= (byte & 0x7f) as $ty << x;
 
                    // if the byte is a full length of a byte
@@ -87,7 +87,7 @@ macro_rules! varint_impl_generic {
                    }
                 }
 
-                VarInt::<$ty>(value)
+                Ok(VarInt::<$ty>(value))
            }
 
             //   pub fn from_le_bytes(bytes: &[u8]) -> Self {
@@ -105,7 +105,7 @@ macro_rules! varint_impl_generic {
             }
             /// Reads `self` from the given buffer.
             fn compose(source: &[u8], position: &mut usize) -> Result<Self, crate::error::BinaryError> {
-               let v = Self::from_be_bytes(&source[*position..]);
+               let v = Self::from_be_bytes(&source[*position..])?;
                *position += v.get_byte_length() as usize;
                Ok(v)
             }

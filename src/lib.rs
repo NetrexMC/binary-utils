@@ -2,7 +2,7 @@
 
 use std::any::type_name;
 use std::convert::{From, Into, TryInto};
-use std::io;
+use std::io as std_io;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6};
 
 pub use bin_macro::*;
@@ -11,13 +11,16 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use error::BinaryError;
 use std::io::{Cursor, Read, Write};
 
+/// Error utilities for Binary Utils.
+/// This allows better handling of errors.
+///
+/// By default, errors **can** be converted to: `std::io::Error`
 pub mod error;
-pub mod u24_impl;
 pub mod varint;
+pub mod io;
+mod u24_impl;
 
 pub use self::{u24_impl::*, varint::*};
-
-pub type Stream = io::Cursor<Vec<u8>>;
 
 macro_rules! includes {
     ($var: ident, $method: ident, $values: expr) => {{
@@ -243,7 +246,7 @@ macro_rules! impl_streamable_vec_primitive {
                 // use ::std::io::Read;
                 // read a var_int
                 let mut ret: Vec<$ty> = Vec::new();
-                let varint = VarInt::<u32>::from_be_bytes(source);
+                let varint = VarInt::<u32>::from_be_bytes(source)?;
                 let length: u32 = varint.into();
 
                 *position += varint.get_byte_length() as usize;

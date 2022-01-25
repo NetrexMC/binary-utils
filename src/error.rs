@@ -43,3 +43,9 @@ impl From<std::io::Error> for BinaryError {
         Self::RecoverableUnknown
     }
 }
+
+impl std::fmt::Display for BinaryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.get_message())
+    }
+}
