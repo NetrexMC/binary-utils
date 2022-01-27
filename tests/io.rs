@@ -28,15 +28,17 @@ fn write_tests() -> std::io::Result<()> {
 #[test]
 fn read_tests() -> std::io::Result<()> {
     // Varint reading!
-    {
-        let buffer: Vec<u8> = vec![255, 255, 255, 255, 7, 0, 255, 1, 0, 0];
-        let mut cursor = Cursor::new(buffer);
-        let v = cursor.read_u32_varint()?;
-        assert_eq!(v.0, 2147483647);
-        dbg!(cursor.read_u8()?);
-        dbg!(cursor.position());
-        let v2 = cursor.read_u32_varint()?;
-        assert_eq!(v2.0, 255);
-    }
+    // {
+    //     let buffer: Vec<u8> = vec![255, 255, 255, 255, 7, 0, 255, 1, 0, 0];
+    //     let mut cursor = Cursor::new(buffer);
+    //     let v = cursor.read_u32_varint()?;
+    //     assert_eq!(v.0, 2147483647);
+    //     dbg!(cursor.read_u8()?);
+    //     dbg!(cursor.position());
+    //     let v2 = cursor.read_u32_varint()?;
+    //     assert_eq!(v2.0, 255);
+    // }
+
+    // read 32 int string
     Ok(())
 }
