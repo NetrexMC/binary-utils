@@ -16,9 +16,9 @@ use std::io::{Cursor, Read, Write};
 ///
 /// By default, errors **can** be converted to: `std::io::Error`
 pub mod error;
-pub mod varint;
 pub mod io;
 mod u24_impl;
+pub mod varint;
 
 pub use self::{u24_impl::*, varint::*};
 

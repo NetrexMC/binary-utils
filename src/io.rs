@@ -1,10 +1,8 @@
-use std::{
-    io::{self, Result}
-};
+use std::io::{self, Result};
 
 use byteorder::ByteOrder;
-use byteorder::WriteBytesExt;
 use byteorder::ReadBytesExt;
+use byteorder::WriteBytesExt;
 
 use crate::*;
 pub trait BinaryReader: ReadBytesExt + Clone {
@@ -25,28 +23,43 @@ pub trait BinaryReader: ReadBytesExt + Clone {
                 if let Ok(var) = VarInt::<u32>::compose(&four[..], &mut 0) {
                     return Ok(var);
                 } else {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not read varint"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "Could not read varint",
+                    ));
                 }
             } else if let Ok(_) = ref_to.read_exact(&mut three[..]) {
                 if let Ok(var) = VarInt::<u32>::compose(&three[..], &mut 0) {
                     return Ok(var);
                 } else {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not read varint"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "Could not read varint",
+                    ));
                 }
             } else if let Ok(_) = ref_to.read_exact(&mut two[..]) {
                 if let Ok(var) = VarInt::<u32>::compose(&two[..], &mut 0) {
                     return Ok(var);
                 } else {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not read varint"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "Could not read varint",
+                    ));
                 }
             } else {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "unable to read varint"));
+                return Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "unable to read varint",
+                ));
             }
         } else {
             if let Ok(var) = VarInt::<u32>::compose(&most[..], &mut 0) {
                 return Ok(var);
             } else {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not read varint"));
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Could not read varint",
+                ));
             }
         }
     }
@@ -68,7 +81,10 @@ pub trait BinaryReader: ReadBytesExt + Clone {
             }
         }
 
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not read varint"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Could not read varint",
+        ));
     }
 
     /// Reads a string sized by a `u16`.
@@ -180,7 +196,6 @@ pub trait BinaryReader: ReadBytesExt + Clone {
     //     }
     //     Ok(())
     // }
-
 
     // /// Reads an array to the stream. This array will
     // /// be sized by a `u64` with the contents being
@@ -346,7 +361,10 @@ pub trait BinaryWriter: WriteBytesExt {
             } else if let Err(e) = res {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
-                    format!("Array Item could not be parsed due to a Binary Error: {}", e),
+                    format!(
+                        "Array Item could not be parsed due to a Binary Error: {}",
+                        e
+                    ),
                 ));
             } else {
                 return Err(io::Error::new(
@@ -374,7 +392,10 @@ pub trait BinaryWriter: WriteBytesExt {
             } else if let Err(e) = res {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
-                    format!("Array Item could not be parsed due to a Binary Error: {}", e),
+                    format!(
+                        "Array Item could not be parsed due to a Binary Error: {}",
+                        e
+                    ),
                 ));
             } else {
                 return Err(io::Error::new(
@@ -385,7 +406,6 @@ pub trait BinaryWriter: WriteBytesExt {
         }
         Ok(())
     }
-
 
     /// Writes an array to the stream. This array will
     /// be sized by a `u64` with the contents being
@@ -403,7 +423,10 @@ pub trait BinaryWriter: WriteBytesExt {
             } else if let Err(e) = res {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
-                    format!("Array Item could not be parsed due to a Binary Error: {}", e),
+                    format!(
+                        "Array Item could not be parsed due to a Binary Error: {}",
+                        e
+                    ),
                 ));
             } else {
                 return Err(io::Error::new(

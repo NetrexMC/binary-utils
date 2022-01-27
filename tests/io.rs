@@ -1,6 +1,9 @@
 use std::io::Cursor;
 
-use binary_utils::{io::{BinaryWriter, BinaryReader}, VarInt, LE};
+use binary_utils::{
+    io::{BinaryReader, BinaryWriter},
+    VarInt, LE,
+};
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 
 #[test]

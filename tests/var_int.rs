@@ -1,5 +1,5 @@
-use binary_utils::*;
 use binary_utils::Streamable;
+use binary_utils::*;
 
 #[test]
 fn read_write_var_int() {
@@ -39,13 +39,12 @@ fn var_int_test_middle() {
     let buffer = vec![0, 0, 0, 255, 1, 0, 0];
     let mut position = 0;
 
-    assert_eq!(
-        u24::compose(&buffer[..], &mut position).unwrap().inner(),
-        0
-    );
+    assert_eq!(u24::compose(&buffer[..], &mut position).unwrap().inner(), 0);
 
     assert_eq!(
-        VarInt::<u32>::compose(&buffer[..], &mut position).unwrap().0,
+        VarInt::<u32>::compose(&buffer[..], &mut position)
+            .unwrap()
+            .0,
         255
     );
 }
