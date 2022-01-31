@@ -328,9 +328,10 @@ impl Streamable for SocketAddr {
             Self::V4(_) => {
                 stream.write_u8(4)?;
                 let partstr = self.to_string();
-                let parts: Vec<&str> = partstr.split(".").collect();
+                let actstr = partstr.split(":").collect::<Vec<&str>>()[0];
+                let parts: Vec<&str> = actstr.split(".").collect();
                 for part in parts {
-                    let mask = u8::from_str_radix(part, 10).unwrap_or(0);
+                    let mask = part.parse::<u8>().unwrap_or(0);
                     stream.write_u8(mask)?;
                 }
                 stream
