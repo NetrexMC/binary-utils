@@ -10,7 +10,7 @@ pub const ERR_VARINT_TOO_LONG: &str = "Varint is too long to be written to buffe
 
 macro_rules! can_read {
     ($self: ident, $size: expr) => {
-        $self.buf.remaining() > $size
+        $self.buf.remaining() >= $size
     };
 }
 
@@ -47,11 +47,81 @@ macro_rules! write_fn {
     };
 }
 
-/// ByteReader is a panic-free way to read bytes from a `Buf` trait.
+/// ByteReader is a panic-free way to read bytes from the `byte::Buf` trait.
 ///
-/// Each read method will add a 3 OP calls to `Buf` trait.
+/// ## Example
+/// ```rust
+/// use binary_utils::io::ByteReader;
+///
+/// fn main() {
+///    let mut buf = ByteReader::from(&[0, 253, 255, 255, 255, 15][..]);
+///    assert_eq!(buf.read_u8().unwrap(), 0);
+///    assert_eq!(buf.read_var_i32().unwrap(), -2147483647);
+/// }
+/// ```
+///
+/// ## Peek Ahead
+/// `ByteReader` also provides a utility `peek_ahead` function that allows you to
+/// "peek ahead" at the next byte in the stream without advancing the stream.
+///
+/// Do not confuse this with any sort of "peek" function. This function does not
+/// increment the read position of the stream, but rather copies the byte at the
+/// specified position.
+/// ```rust
+/// use binary_utils::io::ByteReader;
+///
+/// fn main() {
+///    let mut buf = ByteReader::from(&[253, 255, 14, 255, 255, 15][..]);
+///    if buf.peek_ahead(3) != 255 {
+///        // buffer is corrupted!
+///    } else {
+///        // read the varint
+///        let num = buf.read_var_i32().unwrap();
+///    }
+/// }
+/// ```
+///
+/// ## Reading a struct without `Composable`
+/// This is useful if you are trying to read a struct or optional type and validate the type before
+/// reading the rest of the struct.
+/// ```rust
+/// use binary_utils::io::ByteReader;
+///
+/// struct PingPacket {
+///    pub id: u8,
+///    pub time: u64,
+///    pub ack_id: Option<i32>
+/// }
+///
+/// fn main() {
+///     let mut buf = ByteReader::from(&[0, 253, 255, 255, 255, 255, 255, 255, 255, 0][..]);
+///
+///     // Read the id
+///     let id = buf.read_u8().unwrap();
+///
+///     if id == 0 {
+///         // Read the time
+///        let time = buf.read_u64().unwrap();
+///        // read ack
+///        if buf.read_bool().unwrap() {
+///            let ack_id = buf.read_var_i32().unwrap();
+///            let packet = PingPacket { id, time, ack_id: Some(ack_id) };
+///        } else {
+///            let packet = PingPacket { id, time, ack_id: None };
+///        }
+///    }
+/// }
+/// ```
 pub struct ByteReader {
-    pub buf: Bytes,
+    pub(crate) buf: Bytes,
+}
+
+impl From<ByteWriter> for ByteReader {
+    fn from(writer: ByteWriter) -> Self {
+        Self {
+            buf: writer.buf.freeze(),
+        }
+    }
 }
 
 impl Into<Bytes> for ByteReader {
@@ -86,13 +156,33 @@ impl From<Vec<u8>> for ByteReader {
 
 impl From<&[u8]> for ByteReader {
     fn from(buf: &[u8]) -> Self {
-        Self { buf: Bytes::from(buf.to_vec()) }
+        Self {
+            buf: Bytes::from(buf.to_vec()),
+        }
     }
 }
 
 impl ByteReader {
-    /// This is a function intended to be used to "peek ahead at x byte" on the given stream.
-    /// This WILL NOT advance the stream!
+    /// `ByteReader` also provides a utility `peek_ahead` function that allows you to
+    /// "peek ahead" at the next byte in the stream without advancing the stream.
+    ///
+    /// Do not confuse this with any sort of "peek" function. This function does not
+    /// increment the read position of the stream, but rather copies the byte at the
+    /// specified position.
+    /// ```rust
+    /// use binary_utils::io::ByteReader;
+    ///
+    /// fn main() {
+    ///    let mut buf = ByteReader::from(&[253, 255, 14, 255, 255, 15][..]);
+    ///    if buf.peek_ahead(3) != 255 {
+    ///        // buffer is corrupted, varints can never have a leading byte less than 255 if
+    ///        // Their are bytes remaining!
+    ///    } else {
+    ///        // read the varint
+    ///        let num = buf.read_var_i32().unwrap();
+    ///    }
+    /// }
+    /// ```
     pub fn peek_ahead(&mut self, pos: usize) -> Result<u8, std::io::Error> {
         if can_read!(self, pos) {
             return Ok(self.buf.chunk()[pos]);
@@ -244,12 +334,15 @@ impl ByteReader {
         // todo: fails on -2147483648, which is the minimum value for i32
         // todo: probably nothing to worry about, but should be fixed
         let num = self.read_var_u32()?;
-        Ok((num >> 1) as i32 ^ -((num & 1) as i32)) // does not work on large numbers
-                                                    // return Ok(if num & 1 != 0 {
-                                                    //     !((num >> 1) as i32)
-                                                    // } else {
-                                                    //     (num >> 1) as i32
-                                                    // });
+
+        // for some reason this does not work on large numbers
+        Ok((num >> 1) as i32 ^ -((num & 1) as i32))
+
+        // return Ok(if num & 1 != 0 {
+        //     !((num >> 1) as i32)
+        // } else {
+        //     (num >> 1) as i32
+        // });
     }
 
     read_fn!(read_u64, u64, get_u64, 8);
@@ -375,10 +468,58 @@ impl ByteReader {
             return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
         }
     }
+
+    pub fn as_slice(&self) -> &[u8] {
+        self.buf.chunk()
+    }
 }
 
+/// ByteWriter is a panic-free way to write bytes to a `BufMut` trait.
+///
+/// ## Example
+/// A generic example of how to use the `ByteWriter` struct.
+/// ```rust
+/// use binary_utils::io::ByteWriter;
+/// use binary_utils::io::ByteReader;
+///
+/// fn main() {
+///    let mut writer = ByteWriter::new();
+///    writer.write_string("Hello World!").unwrap();
+///    writer.write_var_u32(65536).unwrap();
+///    writer.write_u8(0).unwrap();
+///
+///    println!("Bytes: {:?}", writer.as_slice());
+/// }
+/// ```
+///
+/// `ByteWriter` also implements the `Into` trait to convert the `ByteWriter` into a `BytesMut` or `Bytes` structs.
+/// ```rust
+/// use binary_utils::io::ByteWriter;
+/// use binary_utils::io::ByteReader;
+///
+/// fn main() {
+///     let mut writer = ByteWriter::new();
+///     writer.write_u8(1);
+///     writer.write_u8(2);
+///     writer.write_u8(3);
+///
+///     let mut reader: ByteReader = writer.into();
+///     assert_eq!(reader.read_u8().unwrap(), 1);
+///     assert_eq!(reader.read_u8().unwrap(), 2);
+///     assert_eq!(reader.read_u8().unwrap(), 3);
+/// }
+/// ```
+///
+/// #### ByteWriter Implementation Notice
+/// While most of the methods are reversable, some are not.
+/// Meaning there is a chance that if you call a method in a edge case, it will corrupt the stream.
+///
+/// For example, `write_var_u32` is not reversable because we currently do not
+/// allocate a buffer to store the bytes before writing them to the buffer.
+/// While you should never encounter this issue, it is possible when you run out of memory.
+/// This issue is marked as a todo, but is low priority.
 pub struct ByteWriter {
-    pub buf: BytesMut,
+    pub(crate) buf: BytesMut,
 }
 
 impl Into<BytesMut> for ByteWriter {
@@ -418,6 +559,14 @@ impl From<&[u8]> for ByteWriter {
         let mut buf = BytesMut::with_capacity(slice.len());
         buf.put_slice(slice);
         return Self { buf };
+    }
+}
+
+impl From<ByteReader> for ByteWriter {
+    fn from(reader: ByteReader) -> Self {
+        Self {
+            buf: reader.buf.chunk().into(),
+        }
     }
 }
 
@@ -580,7 +729,7 @@ impl ByteWriter {
 
     /// Write a string to the buffer
     /// The string is written as a var_u32 length followed by the bytes of the string.
-    /// Uses https://protobuf.dev/programming-guides/encoding/#length-types for length encoding
+    /// Uses <https://protobuf.dev/programming-guides/encoding/#length-types> for length encoding
     pub fn write_string(&mut self, string: &str) -> Result<(), std::io::Error> {
         // https://protobuf.dev/programming-guides/encoding/#length-types
         if can_write!(self, string.len()) {
