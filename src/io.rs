@@ -72,7 +72,7 @@ macro_rules! write_fn {
 ///
 /// fn main() {
 ///    let mut buf = ByteReader::from(&[253, 255, 14, 255, 255, 15][..]);
-///    if buf.peek_ahead(3) != 255 {
+///    if buf.peek_ahead(3).unwrap() != 255 {
 ///        // buffer is corrupted!
 ///    } else {
 ///        // read the varint
@@ -174,7 +174,7 @@ impl ByteReader {
     ///
     /// fn main() {
     ///    let mut buf = ByteReader::from(&[253, 255, 14, 255, 255, 15][..]);
-    ///    if buf.peek_ahead(3) != 255 {
+    ///    if buf.peek_ahead(3).unwrap() != 255 {
     ///        // buffer is corrupted, varints can never have a leading byte less than 255 if
     ///        // Their are bytes remaining!
     ///    } else {

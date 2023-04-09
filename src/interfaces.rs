@@ -2,7 +2,7 @@ use crate::io::{ByteReader, ByteWriter};
 
 /// Allows you to read from a `ByteReader` without needing to know the type.
 ///
-/// ```no_run
+/// ```ignore
 /// use binary_utils::io::{ByteReader, Reader};
 ///
 /// pub struct MyStruct {
@@ -46,7 +46,7 @@ pub trait Writer {
 /// use the `Reader` and `Writer` traits.
 ///
 /// ### New Implementation Example
-/// ```no_run
+/// ```ignore
 /// use binary_utils::io::{ByteReader, ByteWriter};
 /// use binary_utils::interfaces::{Reader, Writer};
 ///
@@ -59,7 +59,7 @@ pub trait Writer {
 /// ## `Streamable`
 /// A trait to parse and unparse header structs from a given buffer.
 ///
-/// ```no_run
+/// ```ignore
 /// use binary_utils::{Streamable, error::BinaryError};
 ///
 /// struct Foo {
@@ -89,7 +89,7 @@ pub trait Streamable<T>: Reader<T> + Writer {
     /// Writes `self` to the given buffer.
     fn parse(&self) -> Result<Vec<u8>, crate::error::BinaryError>
     where
-        T: Sized
+        T: Sized,
     {
         if let Ok(v) = self.init_write() {
             Ok(v.as_slice().to_vec())
@@ -103,7 +103,7 @@ pub trait Streamable<T>: Reader<T> + Writer {
     /// ⚠️ This method is not fail safe, and will panic if result is Err.
     fn fparse(&self) -> Vec<u8>
     where
-        T: Sized
+        T: Sized,
     {
         self.parse().unwrap()
     }
@@ -111,7 +111,7 @@ pub trait Streamable<T>: Reader<T> + Writer {
     /// Reads `self` from the given buffer.
     fn compose(source: &[u8], position: &mut usize) -> Result<T, crate::error::BinaryError>
     where
-        T: Sized
+        T: Sized,
     {
         let mut reader = ByteReader::from(&source[*position..]);
         if let Ok(v) = Self::read(&mut reader) {
