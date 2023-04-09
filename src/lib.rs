@@ -72,7 +72,6 @@ pub mod error {
             write!(f, "{}", self.get_message())
         }
     }
-
 }
 
 pub use interfaces::Streamable;
