@@ -331,18 +331,9 @@ impl ByteReader {
     /// Reads a var-int 32-bit signed integer from the stream.
     /// This method is the same as `read_var_u32` but it will return a signed integer.
     pub fn read_var_i32(&mut self) -> Result<i32, std::io::Error> {
-        // todo: fails on -2147483648, which is the minimum value for i32
-        // todo: probably nothing to worry about, but should be fixed
         let num = self.read_var_u32()?;
 
-        // for some reason this does not work on large numbers
         Ok((num >> 1) as i32 ^ -((num & 1) as i32))
-
-        // return Ok(if num & 1 != 0 {
-        //     !((num >> 1) as i32)
-        // } else {
-        //     (num >> 1) as i32
-        // });
     }
 
     read_fn!(read_u64, u64, get_u64, 8);
@@ -625,17 +616,6 @@ impl ByteWriter {
             let num = num as u32;
             self.write_var_u32(num << 1)
         };
-        // let mut x = (num as u32) & u32::MAX;
-        // for _ in (0..35).step_by(7) {
-        //     if x >> 7 == 0 {
-        //         self.write_u8(x as u8)?;
-        //         return Ok(());
-        //     } else {
-        //         self.write_u8(((x & 0x7F) | 0x80) as u8)?;
-        //         x >>= 7;
-        //     }
-        // }
-        // return Err(Error::new(std::io::ErrorKind::InvalidData, ERR_VARINT_TOO_LONG));
     }
 
     write_fn!(write_u64, u64, put_u64, 8);
