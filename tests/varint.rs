@@ -25,10 +25,9 @@ fn read_var_i32() {
     // -12
     let mut buf = ByteReader::from([23].to_vec());
     assert_eq!(buf.read_var_i32().unwrap(), -12);
-    // todo: fix this
-    // todo: for some reason this doesn't work on very large numbers, we're 1 bit off
-    // let mut buf = ByteReader::from([254, 255, 255, 255, 15].to_vec());
-    // assert_eq!(buf.read_var_i32().unwrap(), -2147483648);
+
+    let mut buf = ByteReader::from([255, 255, 255, 255, 15].to_vec());
+    assert_eq!(buf.read_var_i32().unwrap(), -2147483648);
 }
 
 #[test]
@@ -90,4 +89,26 @@ fn write_var_i64() {
     buf.clear();
     buf.write_var_i64(-9223372036854775808).unwrap();
     assert_eq!(buf.as_slice(), &NEGATIVE_LONG[..]);
+}
+
+
+#[test]
+fn var_int_32_overflow() {
+    let mut buf = ByteWriter::new();
+    buf.write_var_u32(2147483648).unwrap();
+    assert_eq!(buf.as_slice(), &[128, 128, 128, 128, 8]);
+
+    let mut buf = ByteReader::from(&buf.as_slice()[..]);
+    assert_eq!(buf.read_var_u32().unwrap(), 2147483648);
+
+    // now into i32
+    let mut buf = ByteWriter::new();
+    buf.write_var_i32(i32::MIN).unwrap();
+
+    let mut buf = ByteReader::from(&buf.as_slice()[..]);
+    assert_eq!(buf.read_var_i32().unwrap(), i32::MIN);
+
+    // validate i32 ::MAX overflow now
+    let mut buf = ByteWriter::new();
+    buf.write_var_i32(i32::MAX).unwrap();
 }
