@@ -29,13 +29,14 @@ pub trait Writer {
     /// Writes `Self` to a `ByteWriter`.
     ///
     /// For automatic implementations, use `#[derive(BinaryEncoder]` macro.
-    fn write(&self, buf: &mut ByteWriter) -> Result<&mut ByteWriter, std::io::Error>;
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error>;
 
     /// This is a utility function to write `Self` to a `ByteWriter` without
     /// needing to create a `ByteWriter` first.
-    fn init_write(&self) -> Result<&mut ByteWriter, std::io::Error> {
+    fn init_write(&self) -> Result<ByteWriter, std::io::Error> {
         let mut buf = ByteWriter::new();
-        self.write(&mut buf)
+        self.write(&mut buf)?;
+        Ok(buf)
     }
 }
 
