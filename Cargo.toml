@@ -1,6 +1,6 @@
 [package]
 name = "binary_utils"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["Bavfalcon9"]
 edition = "2021"
 include = ["src/**/*", "README.md"]
