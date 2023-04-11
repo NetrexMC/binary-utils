@@ -83,7 +83,7 @@ macro_rules! write_fn {
 /// }
 /// ```
 ///
-/// ## Reading a struct without `Composable`
+/// ## Reading a struct without `BinaryDecoder`
 /// This is useful if you are trying to read a struct or optional type and validate the type before
 /// reading the rest of the struct.
 /// ```rust
@@ -251,63 +251,6 @@ impl ByteReader {
     /// This function is recoverable, meaning that if the stream ends before the
     /// var-int is fully read, it will return an error, and will not consume the
     /// bytes that were read.
-    ///
-    /// #### Decoding VarInt
-    /// You will need to:
-    ///  1. Read the next byte
-    ///  2. Get the 7 significant bits (next byte & 0x7F [segment bit]) (continuation bit is 0x80)
-    ///  3. Shift the value to the left by i bits
-    ///  4. Validate whether this is the last byte (next byte & 0x80 == 0)
-    ///  5. IF the last byte, return the value and
-    ///     add the iterative value (current byte) to the current value.
-    ///
-    /// A visual representation of how this works:
-    /// ```txt
-    /// ========================================================
-    /// Buffer:          0xdd 0xc7 0x01
-    ///
-    /// Initial values:
-    ///  i = 0           Current iteration
-    ///  v = 0           Current value
-    ///
-    /// -------------------------------------------------------
-    /// First iteration (i = 0):
-    /// -------------------------------------------------------
-    /// 0xdd 0xc7 0x01
-    /// ^                                - b
-    /// b = 0xdd                11011101 - Next byte
-    /// b & 0x7F                 1011101 - 7 significant bits
-    /// b << 0                   1011101 - Shifted by iteration bits
-    /// b & 0x80 == 0              false - There are more bytes
-    /// v =| 1011101 (93)        1011101 - Added to the current value
-    /// i = i + 1:                     1 - Current iteration
-    ///
-    /// -------------------------------------------------------
-    /// Second iteration (i = 7):
-    /// -------------------------------------------------------
-    /// 0xdd 0xc7 0x01
-    ///      ^                           - b
-    /// b = 0xc7                11000111 - Next byte
-    /// b & 0x7F                 1000111 - 7 significant bits
-    /// b << 7                           - Shifted by iteration bits
-    ///    | -> 10001110000000
-    /// b & 0x80 == 0              false - There are more bytes
-    /// v =| b                           - Added to the current value
-    ///    | -> 110001111011101 (25565)
-    ///
-    /// -------------------------------------------------------
-    /// Third iteration (i = 14):
-    /// -------------------------------------------------------
-    /// 0xdd 0xc7 0x01
-    ///           ^                      - b
-    /// 0x01                    00000001 - Next byte
-    /// b & 0x7F                 0000001 - 7 significant bits
-    /// b << 14                          - Shifted by iteration bits
-    ///   |-> 000000100000000
-    /// b & 0x80 == 0               true - This byte is the last byte
-    /// v = 25565                        - Last bit, return the value
-    ///     |-> 110001111011101 (25565)
-    /// ```
     #[inline]
     pub fn read_var_u32(&mut self) -> Result<u32, std::io::Error> {
         let mut num = 0u32;
