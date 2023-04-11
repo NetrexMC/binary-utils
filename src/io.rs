@@ -114,6 +114,7 @@ macro_rules! write_fn {
 ///    }
 /// }
 /// ```
+#[derive(Debug, Clone)]
 pub struct ByteReader {
     pub(crate) buf: Bytes,
 }
@@ -483,7 +484,7 @@ impl ByteReader {
     /// # Example
     /// ```rust
     /// use binary_utils::io::ByteReader;
-    /// use binary_utils::io::Reader;
+    /// use binary_utils::interfaces::Reader;
     ///
     /// pub struct HelloWorld {
     ///     pub magic: u32
@@ -498,9 +499,10 @@ impl ByteReader {
     /// }
     ///
     /// fn main() {
-    ///     let mut reader = ByteReader::new(&[0x00, 0x00, 0x00, 0x01]);
+    ///     // Nothing is here!
+    ///     let mut reader = ByteReader::from(&[0x00][..]);
     ///     let hello_world = reader.read_option::<HelloWorld>().unwrap();
-    ///     assert_eq!(hello_world.is_some(), true);
+    ///     assert_eq!(hello_world.is_some(), false);
     /// }
     /// ```
     pub fn read_option<T: Reader<T>>(&mut self) -> Result<Option<T>, std::io::Error> {
@@ -586,6 +588,7 @@ impl ByteReader {
 /// allocate a buffer to store the bytes before writing them to the buffer.
 /// While you should never encounter this issue, it is possible when you run out of memory.
 /// This issue is marked as a todo, but is low priority.
+#[derive(Debug, Clone)]
 pub struct ByteWriter {
     pub(crate) buf: BytesMut,
 }
@@ -804,7 +807,7 @@ impl ByteWriter {
     /// ## Example
     /// ```rust
     /// use binary_utils::io::ByteWriter;
-    /// use binary_utils::io::Writer;
+    /// use binary_utils::interfaces::Writer;
     ///
     /// pub struct HelloWorld {
     ///     pub magic: u32
