@@ -6,7 +6,7 @@ edition = "2021"
 include = ["src/**/*", "README.md"]
 
 [dependencies]
-bin_macro = { path = "./bin_macro" }
+codegen = { path = "./codegen" }
 bytes = "1.4.0"
 
 [features]

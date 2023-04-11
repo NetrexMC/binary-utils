@@ -91,7 +91,6 @@ fn write_var_i64() {
     assert_eq!(buf.as_slice(), &NEGATIVE_LONG[..]);
 }
 
-
 #[test]
 fn var_int_32_overflow() {
     let mut buf = ByteWriter::new();

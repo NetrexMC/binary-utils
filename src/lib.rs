@@ -1,5 +1,18 @@
+/// Provides a panic-free way to read and write binary data.
+/// All of the methods within this module follow the protobuf specification at <https://protobuf.dev/programming-guides/encoding/>.
+///
+/// ## Example
+/// ```no_run
+/// use binary_utils::io::ByteReader;
+///
+/// const VARINT: &[u8] = &[255, 255, 255, 255, 7]; // 2147483647
+/// fn main() {
+///     let mut buf = ByteReader::from(&VARINT[..]);
+///     assert_eq!(buf.read_var_u32().unwrap(), 2147483647);
+/// }
+/// ```
 pub mod interfaces;
-
+pub use codegen::*;
 /// The io module contains implementations of these traits for `bytes::Buf` and `bytes::BufMut`.
 ///
 /// Example:
@@ -15,7 +28,6 @@ pub mod interfaces;
 /// ```
 pub mod io;
 pub mod pool;
-
 /// This is a legacy module that will be removed in the future.
 /// This module has been replaced in favor of `std::io::Error`.
 ///

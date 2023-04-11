@@ -1,10 +1,11 @@
 use proc_macro2::{Ident, Span, TokenStream};
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{Attribute, Data, DeriveInput, Error, Expr, ExprLit, Fields, Lit, LitInt, Result, Type};
 
 pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
     let name = &input.ident;
     let attrs = input.attrs;
+
     match input.data {
         Data::Struct(v) => {
             // iterate through struct fields
@@ -18,8 +19,6 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                  impl Streamable for #name {
                       fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
                            use ::std::io::Write;
-                           use binary_utils::varint::{VarInt, VarIntWriter};
-                           use binary_utils::{u24, u24Writer};
                            let mut writer = Vec::new();
                            #writes
                            Ok(writer)
@@ -27,9 +26,6 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
 
                       fn compose(source: &[u8], position: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
                            use ::std::io::Read;
-                           use binary_utils::varint::{VarInt, VarIntReader};
-                           use binary_utils::{u24, u24Reader};
-
                            Ok(Self {
                                 #reads
                            })
@@ -160,7 +156,7 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
 
             Ok(quote! {
                 #[automatically_derived]
-                impl Streamable for #name {
+                impl Streamable<#name> for #name {
                     fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
                         match self {
                             #(#writers)*
@@ -168,6 +164,26 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                     }
 
                     fn compose(source: &[u8], offset: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
+                        // get the repr type and read it
+                        let v = <#enum_ty>::compose(source, offset)?;
+
+                        match v {
+                            #(#readers)*
+                            _ => panic!("Will not fit in enum!")
+                        }
+                    }
+                }
+
+                impl ::binary_utils::interfaces::Writer for #name {
+                    fn write(&self, buf: &mut ::binary_utils::io::ByteWriter) -> Result<(), ::std::io::Error> {
+                        match self {
+                            #(#writers)*
+                        }
+                    }
+                }
+
+                impl ::binary_utils::interfaces::Reader<#name> for #name {
+                    fn read(buf: &mut ::binary_utils::io::ByteReader) -> Result<Self, ::std::io::Error> {
                         // get the repr type and read it
                         let v = <#enum_ty>::compose(source, offset)?;
 
@@ -221,7 +237,7 @@ pub fn impl_streamable_lazy(name: &Ident, ty: &Type) -> (TokenStream, TokenStrea
 }
 
 fn find_one_attr(name: &str, attrs: Vec<Attribute>) -> Option<Attribute> {
-    let mut iter = attrs.iter().filter(|a| a.path.is_ident(name));
+    let mut iter = attrs.iter().filter(|a| a.path().is_ident(name));
     match (iter.next(), iter.next()) {
         (Some(v), None) => Some(v.clone()),
         _ => None,
