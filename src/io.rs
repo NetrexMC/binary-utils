@@ -192,6 +192,7 @@ impl ByteReader {
     }
 
     read_fn!(read_u8, u8, get_u8, 1);
+    read_fn!(read_i8, i8, get_i8, 1);
     read_fn!(read_u16, u16, get_u16, 2);
     read_fn!(read_u16_le, u16, get_u16_le, 2);
     read_fn!(read_i16, i16, get_i16, 2);
@@ -433,6 +434,19 @@ impl ByteReader {
         }
     }
 
+    pub fn read_char(&mut self) -> Result<char, std::io::Error> {
+        let c = self.read_u32()?;
+
+        if let Some(c) = char::from_u32(c) {
+            return Ok(c);
+        } else {
+            return Err(Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Invalid char",
+            ));
+        }
+    }
+
     pub fn read_bool(&mut self) -> Result<bool, std::io::Error> {
         if can_read!(self, 1) {
             return Ok(self.buf.get_u8() != 0);
@@ -460,6 +474,32 @@ impl ByteReader {
         }
     }
 
+    /// Reads a varu32 sized slice from the stream.
+    /// For reading a slice of raw bytes, use `read` instead.
+    pub fn read_sized_slice(&mut self) -> Result<Bytes, std::io::Error> {
+        let len = self.read_var_u32()?;
+
+        if can_read!(self, len as usize) {
+            let b = self.buf.slice(..len as usize);
+            self.buf.advance(len as usize);
+            return Ok(b);
+        } else {
+            return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
+        }
+    }
+
+    /// Reads a slice from the stream into the slice passed by the caller.
+    /// For reading a prefixed sized slice, use `read_sized_slice` instead.
+    pub fn read(&mut self, buffer: &mut [u8]) -> Result<(), std::io::Error> {
+        if can_read!(self, buffer.len()) {
+            self.buf.copy_to_slice(buffer);
+            return Ok(());
+        } else {
+            return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
+        }
+    }
+
+    /// Returns the remaining bytes in the stream.
     pub fn as_slice(&self) -> &[u8] {
         self.buf.chunk()
     }
@@ -569,6 +609,7 @@ impl ByteWriter {
     }
 
     write_fn!(write_u8, u8, put_u8, 1);
+    write_fn!(write_i8, i8, put_i8, 1);
     write_fn!(write_u16, u16, put_u16, 2);
     write_fn!(write_u16_le, u16, put_u16_le, 2);
     write_fn!(write_i16, i16, put_i16, 2);
@@ -653,6 +694,11 @@ impl ByteWriter {
         };
     }
 
+    write_fn!(write_u128, u128, put_u128, 16);
+    write_fn!(write_u128_le, u128, put_u128_le, 16);
+    write_fn!(write_i128, i128, put_i128, 16);
+    write_fn!(write_i128_le, i128, put_i128_le, 16);
+
     pub fn write_uint(&mut self, num: u64, size: usize) -> Result<(), std::io::Error> {
         if can_write!(self, size) {
             self.buf.put_uint(num, size);
@@ -689,13 +735,8 @@ impl ByteWriter {
         }
     }
 
-    pub fn write_slice(&mut self, slice: &[u8]) -> Result<(), std::io::Error> {
-        if can_write!(self, slice.len()) {
-            self.buf.put_slice(slice);
-            return Ok(());
-        } else {
-            return Err(Error::new(std::io::ErrorKind::OutOfMemory, ERR_EOM));
-        }
+    pub fn write_char(&mut self, c: char) -> Result<(), std::io::Error> {
+        self.write_u32(c as u32)
     }
 
     pub fn write_bool(&mut self, b: bool) -> Result<(), std::io::Error> {
@@ -715,6 +756,30 @@ impl ByteWriter {
         if can_write!(self, string.len()) {
             self.write_var_u32(string.len() as u32)?;
             self.buf.put_slice(string.as_bytes());
+            return Ok(());
+        } else {
+            return Err(Error::new(std::io::ErrorKind::OutOfMemory, ERR_EOM));
+        }
+    }
+
+    /// Writes a size-prefixed slice of bytes to the buffer. The slice is prefixed with a var_u32 length.
+    pub fn write_slice(&mut self, slice: &[u8]) -> Result<(), std::io::Error> {
+        if can_write!(self, slice.len()) {
+            self.write_var_u32(slice.len() as u32)?;
+            self.buf.put_slice(slice);
+            return Ok(());
+        } else {
+            return Err(Error::new(std::io::ErrorKind::OutOfMemory, ERR_EOM));
+        }
+    }
+
+    /// Writes a slice of bytes to the buffer
+    /// This is not the same as a size-prefixed slice, this is just a raw slice of bytes.
+    ///
+    /// For automatically size-prefixed slices, use `write_slice`.
+    pub fn write(&mut self, buf: &[u8]) -> Result<(), std::io::Error> {
+        if can_write!(self, buf.len()) {
+            self.buf.put_slice(buf);
             return Ok(());
         } else {
             return Err(Error::new(std::io::ErrorKind::OutOfMemory, ERR_EOM));
