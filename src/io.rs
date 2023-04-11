@@ -4,6 +4,8 @@ use std::{
     io::{Error, IoSlice},
 };
 
+use crate::interfaces::{Reader, Writer};
+
 pub const ERR_EOB: &str = "No more bytes left to be read in buffer";
 pub const ERR_EOM: &str = "Buffer is full, cannot write more bytes";
 pub const ERR_VARINT_TOO_LONG: &str = "Varint is too long to be written to buffer";
@@ -440,10 +442,7 @@ impl ByteReader {
         if let Some(c) = char::from_u32(c) {
             return Ok(c);
         } else {
-            return Err(Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Invalid char",
-            ));
+            return Err(Error::new(std::io::ErrorKind::InvalidData, "Invalid char"));
         }
     }
 
@@ -471,6 +470,44 @@ impl ByteReader {
             return Ok(string);
         } else {
             return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
+        }
+    }
+
+    /// Reads an `Option` of `T` from the stream.
+    /// `T` must implement the `Reader` trait and be sized.
+    ///
+    /// This operation is not recoverable and will corrupt the stream if it fails.
+    /// If this behavior is desired, you should use `peek_ahead` when implementing
+    /// the `Reader` trait.
+    ///
+    /// # Example
+    /// ```rust
+    /// use binary_utils::io::ByteReader;
+    /// use binary_utils::io::Reader;
+    ///
+    /// pub struct HelloWorld {
+    ///     pub magic: u32
+    /// }
+    ///
+    /// impl Reader<HelloWorld> for HelloWorld {
+    ///     fn read(reader: &mut ByteReader) -> Result<HelloWorld, std::io::Error> {
+    ///         Ok(HelloWorld {
+    ///             magic: reader.read_u32()?
+    ///         })
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     let mut reader = ByteReader::new(&[0x00, 0x00, 0x00, 0x01]);
+    ///     let hello_world = reader.read_option::<HelloWorld>().unwrap();
+    ///     assert_eq!(hello_world.is_some(), true);
+    /// }
+    /// ```
+    pub fn read_option<T: Reader<T>>(&mut self) -> Result<Option<T>, std::io::Error> {
+        if self.read_bool()? {
+            return Ok(Some(T::read(self)?));
+        } else {
+            return Ok(None);
         }
     }
 
@@ -760,6 +797,41 @@ impl ByteWriter {
         } else {
             return Err(Error::new(std::io::ErrorKind::OutOfMemory, ERR_EOM));
         }
+    }
+
+    /// Writes an `Option` to the buffer. The option must implement the `Writer` trait.
+    ///
+    /// ## Example
+    /// ```rust
+    /// use binary_utils::io::ByteWriter;
+    /// use binary_utils::io::Writer;
+    ///
+    /// pub struct HelloWorld {
+    ///     pub magic: u32
+    /// }
+    ///
+    /// impl Writer for HelloWorld {
+    ///     fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+    ///         buf.write_u32(self.magic)?;
+    ///         return Ok(());
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     let hello = HelloWorld { magic: 0xCAFEBABE };
+    ///     let mut buf = hello.write_to_bytes().unwrap();
+    ///
+    ///     println!("Hello World: {:?}", buf);
+    /// }
+    /// ```
+    pub fn write_option(&mut self, option: &Option<impl Writer>) -> Result<(), std::io::Error> {
+        if let Some(option) = option {
+            self.write_bool(true)?;
+            option.write(self)?;
+        } else {
+            self.write_bool(false)?;
+        }
+        return Ok(());
     }
 
     /// Writes a size-prefixed slice of bytes to the buffer. The slice is prefixed with a var_u32 length.

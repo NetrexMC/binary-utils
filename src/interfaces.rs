@@ -1,4 +1,4 @@
-use std::{net::{SocketAddr, Ipv4Addr, Ipv6Addr, SocketAddrV6, SocketAddrV4}};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use crate::io::{ByteReader, ByteWriter};
 
@@ -49,27 +49,42 @@ macro_rules! impl_writer {
 pub trait Reader<Output> {
     /// Reads `Self` from a `ByteReader`.
     ///
-    /// For automatic implementations, use `#[derive(BinaryDecoder]` macro.
+    /// For automatic implementations, use the `#[derive(BinaryIo)]` macro.
     fn read(buf: &mut ByteReader) -> Result<Output, std::io::Error>;
 }
 
 // default implementations on primitive types.
 impl_reader!(
-    u8, read_u8,
-    u16, read_u16,
-    u32, read_u32,
-    u64, read_u64,
-    u128, read_u128,
-    i8, read_i8,
-    i16, read_i16,
-    i32, read_i32,
-    i64, read_i64,
-    i128, read_i128,
-    f32, read_f32,
-    f64, read_f64,
-    bool, read_bool,
-    char, read_char,
-    String, read_string
+    u8,
+    read_u8,
+    i8,
+    read_i8,
+    u16,
+    read_u16,
+    i16,
+    read_i16,
+    u32,
+    read_u32,
+    i32,
+    read_i32,
+    u64,
+    read_u64,
+    i64,
+    read_i64,
+    u128,
+    read_u128,
+    i128,
+    read_i128,
+    f32,
+    read_f32,
+    f64,
+    read_f64,
+    bool,
+    read_bool,
+    char,
+    read_char,
+    String,
+    read_string
 );
 
 // little endian implementations on primitive types.
@@ -129,7 +144,7 @@ impl Reader<SocketAddr> for SocketAddr {
                     Ipv4Addr::new(parts.0, parts.1, parts.2, parts.3),
                     port,
                 )))
-            },
+            }
             6 => {
                 let _family = buf.read_u16()?;
                 let port = buf.read_u16()?;
@@ -145,35 +160,39 @@ impl Reader<SocketAddr> for SocketAddr {
                     buf.read_u16()?,
                 );
                 let address = Ipv6Addr::new(
-                    parts.0,
-                    parts.1,
-                    parts.2,
-                    parts.3,
-                    parts.4,
-                    parts.5,
-                    parts.6,
-                    parts.7
+                    parts.0, parts.1, parts.2, parts.3, parts.4, parts.5, parts.6, parts.7,
                 );
                 let scope = buf.read_u32()?;
-                Ok(SocketAddr::V6(
-                    SocketAddrV6::new(
-                        address,
-                        port,
-                        flow,
-                        scope
-                    )
-                ))
-            },
-            _ => {
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "Invalid IP version"
-                ))
+                Ok(SocketAddr::V6(SocketAddrV6::new(
+                    address, port, flow, scope,
+                )))
             }
+            _ => Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Invalid IP version",
+            )),
         }
     }
 }
 
+/// Allows you to write to a `ByteWriter` without needing to know the type.
+///
+/// ```ignore
+/// use binary_utils::io::{ByteWriter, Writer};
+///
+/// pub struct MyStruct {
+///   pub a: u8,
+///   pub b: u8
+/// }
+///
+/// impl Writer for MyStruct {
+///     fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+///         buf.write_u8(self.a)?;
+///         buf.write_u8(self.b)?;
+///         Ok(());
+///     }
+/// }
+/// ```
 pub trait Writer {
     /// Writes `Self` to a `ByteWriter`.
     ///
@@ -182,7 +201,7 @@ pub trait Writer {
 
     /// This is a utility function to write `Self` to a `ByteWriter` without
     /// needing to create a `ByteWriter` first.
-    fn init_write(&self) -> Result<ByteWriter, std::io::Error> {
+    fn write_to_bytes(&self) -> Result<ByteWriter, std::io::Error> {
         let mut buf = ByteWriter::new();
         self.write(&mut buf)?;
         Ok(buf)
@@ -191,22 +210,47 @@ pub trait Writer {
 
 // default implementations on primitive types.
 impl_writer!(
-    u8, write_u8,
-    u16, write_u16,
-    u32, write_u32,
-    u64, write_u64,
-    u128, write_u128,
-    i8, write_i8,
-    i16, write_i16,
-    i32, write_i32,
-    i64, write_i64,
-    i128, write_i128,
-    f32, write_f32,
-    f64, write_f64,
-    bool, write_bool,
-    char, write_char,
-    &str, write_string
+    u8,
+    write_u8,
+    i8,
+    write_i8,
+    u16,
+    write_u16,
+    i16,
+    write_i16,
+    u32,
+    write_u32,
+    i32,
+    write_i32,
+    u64,
+    write_u64,
+    i64,
+    write_i64,
+    u128,
+    write_u128,
+    i128,
+    write_i128,
+    f32,
+    write_f32,
+    f64,
+    write_f64,
+    bool,
+    write_bool,
+    &str,
+    write_string
 );
+
+impl Writer for String {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_string(self)
+    }
+}
+
+impl Writer for char {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_char(*self)
+    }
+}
 
 impl<T> Writer for Vec<T>
 where
@@ -230,7 +274,7 @@ where
             Some(item) => {
                 buf.write_bool(true)?;
                 item.write(buf)?;
-            },
+            }
             None => {
                 buf.write_bool(false)?;
             }
@@ -246,7 +290,7 @@ impl Writer for SocketAddr {
                 buf.write_u8(4)?;
                 buf.write(&addr.ip().octets())?;
                 buf.write_u16(addr.port())?;
-            },
+            }
             SocketAddr::V6(addr) => {
                 buf.write_u8(6)?;
                 // family (unused by rust)
@@ -313,7 +357,7 @@ impl Writer for SocketAddr {
 pub trait Streamable<T>: Reader<T> + Writer {
     /// Writes `self` to the given buffer.
     fn parse(&self) -> Result<Vec<u8>, crate::error::BinaryError> {
-        if let Ok(v) = self.init_write() {
+        if let Ok(v) = self.write_to_bytes() {
             Ok(v.as_slice().to_vec())
         } else {
             Err(crate::error::BinaryError::RecoverableUnknown)
@@ -330,7 +374,7 @@ pub trait Streamable<T>: Reader<T> + Writer {
     /// Reads `self` from the given buffer.
     fn compose(source: &[u8], position: &mut usize) -> Result<T, crate::error::BinaryError>
     where
-        Self: Sized
+        Self: Sized,
     {
         let mut reader = ByteReader::from(&source[*position..]);
         if let Ok(v) = Self::read(&mut reader) {
@@ -345,7 +389,7 @@ pub trait Streamable<T>: Reader<T> + Writer {
     /// ⚠️ This method is not fail safe, and will panic if result is Err.
     fn fcompose(source: &[u8], position: &mut usize) -> T
     where
-        Self: Sized
+        Self: Sized,
     {
         Self::compose(source, position).unwrap()
     }
