@@ -12,6 +12,8 @@
 /// }
 /// ```
 pub mod interfaces;
+/// Provides a derive macro that implements `::binary_utils::interfaces::Reader<T>` and `::binary_utils::interfaces::Writer<T>`.
+/// 
 pub use codegen::*;
 /// The io module contains implementations of these traits for `bytes::Buf` and `bytes::BufMut`.
 ///

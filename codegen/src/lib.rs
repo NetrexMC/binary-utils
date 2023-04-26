@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
+mod io;
 mod legacy;
 
 /// **DEPRECATED**.
@@ -34,4 +35,9 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
     // legacy::stream_parse(parse_macro_input!(input as DeriveInput))
     //     .unwrap()
     //     .into()
+}
+
+#[proc_macro_derive(BinaryIo)]
+pub fn derive_binary_io(input: TokenStream) -> TokenStream {
+    io::binary_encoder(input)
 }
