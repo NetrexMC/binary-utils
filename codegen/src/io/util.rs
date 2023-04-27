@@ -13,6 +13,7 @@ pub(crate) mod attrs {
     pub enum IoAttr {
         Satisfy(syn::Expr),
         Require(syn::Ident),
+        IfPresent(syn::Ident),
         Skip,
     }
 
@@ -33,7 +34,7 @@ pub(crate) mod attrs {
                 }
                 Err(e) => {
                     error_stream.append_all(
-                        syn::Error::new_spanned(attr, format!("Satisfy attribute requires an Expression!\n Example: #[satisfy(self.field == 0)]\n Error: {}", e))
+                        syn::Error::new_spanned(attr, format!("'satisfy' attribute requires an Expression!\n Example: #[satisfy(self.field == 0)]\n Error: {}", e))
                             .to_compile_error(),
                     );
                 }
@@ -47,7 +48,21 @@ pub(crate) mod attrs {
                 }
                 Err(_) => {
                     error_stream.append_all(
-                        syn::Error::new_spanned(attr, "Require attribute requires an Identifier! \n Example: #[require(self.field)]")
+                        syn::Error::new_spanned(attr, "'require' attribute requires an Identifier! \n Example: #[require(self.field)]")
+                            .to_compile_error(),
+                    );
+                }
+            }
+        } else if path.is_ident("if_present") {
+            // Require is an attribute that allows an identifier to be specified
+            // this is polyfilled later with `self.IDENTIFIER.is_some()`
+            match attr.parse_args::<syn::Ident>() {
+                Ok(ident) => {
+                    return Ok(IoAttr::IfPresent(ident));
+                }
+                Err(_) => {
+                    error_stream.append_all(
+                        syn::Error::new_spanned(attr, "'if_present' attribute requires an Identifier! \n Example: #[if_present(self.field)]")
                             .to_compile_error(),
                     );
                 }
@@ -61,7 +76,7 @@ pub(crate) mod attrs {
             error_stream.append_all(
                 syn::Error::new_spanned(
                     attr,
-                    "Unknown attribute, did you mean 'satisfy', 'require', or 'skip'?",
+                    "Unknown attribute, did you mean 'satisfy', 'require', 'if_present', or 'skip'?",
                 )
                 .to_compile_error(),
             );

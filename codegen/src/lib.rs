@@ -38,7 +38,7 @@ pub fn derive_stream(_input: TokenStream) -> TokenStream {
     //     .into()
 }
 
-#[proc_macro_derive(BinaryIo, attributes(skip, require, satisfy))]
+#[proc_macro_derive(BinaryIo, attributes(skip, require, if_present, satisfy))]
 pub fn derive_binary_io(input: TokenStream) -> TokenStream {
     io::binary_encoder(input)
 }
