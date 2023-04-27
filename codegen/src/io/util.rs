@@ -90,11 +90,9 @@ pub(crate) mod attrs {
                                     ty,
                                     format!("{} type must have a generic argument in order to be required!", name)
                                 ).to_compile_error());
-                                return None;
                             }
                         }
                     }
-                    return None;
                 }
                 return None;
             }
