@@ -75,32 +75,28 @@ pub(crate) mod attrs {
     /// todo: There's probably a better way to resolve the type without having to do this.
     pub fn resolve_generic_type<'a>(
         ty: &'a syn::Type,
-        ident: &str,
+        name: &str,
         error_stream: &mut TokenStream2,
     ) -> Option<syn::Type> {
         match *ty {
             syn::Type::Path(ref tp) => {
                 if let Some(first) = tp.path.segments.first() {
-                    if first.ident.to_string() == ident {
+                    if first.ident.to_string() == name {
                         if let syn::PathArguments::AngleBracketed(args) = &first.arguments {
                             if let Some(syn::GenericArgument::Type(inner)) = args.args.first() {
-                                Some(inner.clone())
+                                return Some(inner.clone());
                             } else {
                                 error_stream.append_all(syn::Error::new_spanned(
                                     ty,
-                                    "Option type must have a generic argument in order to be required!"
+                                    format!("{} type must have a generic argument in order to be required!", name)
                                 ).to_compile_error());
-                                None
+                                return None;
                             }
-                        } else {
-                            None
                         }
-                    } else {
-                        None
                     }
-                } else {
-                    None
+                    return None;
                 }
+                return None;
             }
             _ => None,
         }
