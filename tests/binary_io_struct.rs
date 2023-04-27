@@ -69,7 +69,7 @@ struct CompexPacket {
     contains_content: bool,
     #[satisfy(self.contains_content == true && self.is_ack == true)]
     content: Option<String>,
-    #[require(content)]
+    #[if_present(content)]
     content_validated: Option<u32>,
 }
 
