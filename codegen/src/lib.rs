@@ -38,6 +38,14 @@ pub fn derive_stream(_input: TokenStream) -> TokenStream {
     //     .into()
 }
 
+/// This proc-macro implements both the `Reader` and `Writer` traits from `binary_utils::interfaces`.
+///
+/// ## Structs
+/// `BinaryIo` supports both Named, and Unnamed structs; however it does not support unit structs.
+/// This macro will encode/decode the fields of the struct in the order they are defined, as long as they are not skipped;
+/// however as an additional requirement, each field **MUST** implement** the `Reader` and `Writer` traits, if they do not, this macro will fail.
+/// 
+/// 
 #[proc_macro_derive(BinaryIo, attributes(skip, require, if_present, satisfy))]
 pub fn derive_binary_io(input: TokenStream) -> TokenStream {
     io::binary_encoder(input)
