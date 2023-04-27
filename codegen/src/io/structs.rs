@@ -111,13 +111,37 @@ pub(crate) fn derive_struct(
                                 if self.#id.is_some() {
                                     _binary_writew.write(&mut (self.#field_name.unwrap()).write_to_bytes()?.as_slice())?;
                                 } else {
-                                    // return Err(::std::io::Error::new(::std::io::ErrorKind::InvalidData, "Cannot write a field that is required but not present!"));
+                                    return Err(::std::io::Error::new(::std::io::ErrorKind::InvalidData, "Cannot write a field that is required but not present!"));
                                 }
                             ));
                             reader.append_all(quote!(
                                 if #id.is_none() {
-                                    // return Err(::std::io::Error::new(::std::io::ErrorKind::InvalidData, "Cannot read a field that is required but not present!"));
+                                    return Err(::std::io::Error::new(::std::io::ErrorKind::InvalidData, "Cannot read a field that is required but not present!"));
                                 }
+                                let #field_name = <#forced_type>::read(_binary_readerr).ok();
+                            ));
+                        }
+                        IoAttr::IfPresent(id) => {
+                            // behaves identically to require but does not error if the field is not present.
+                            let inner_type: Option<syn::Type> =
+                            resolve_generic_type(field_type, "Option", error_stream);
+
+                            if inner_type.is_none() {
+                                error_stream.append_all(syn::Error::new_spanned(
+                                    field,
+                                    "Cannot have a field with a binary_utils::Require attribute that is not an Option!"
+                                ).to_compile_error());
+                                return quote!().into();
+                            }
+
+                            let forced_type = inner_type.unwrap();
+
+                            writer.append_all(quote!(
+                                if self.#id.is_some() {
+                                    _binary_writew.write(&mut (self.#field_name.unwrap()).write_to_bytes()?.as_slice())?;
+                                }
+                            ));
+                            reader.append_all(quote!(
                                 let #field_name = <#forced_type>::read(_binary_readerr).ok();
                             ));
                         }
