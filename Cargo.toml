@@ -6,7 +6,9 @@ edition = "2021"
 include = ["src/**/*", "README.md"]
 
 [dependencies]
-codegen = { path = "./codegen" }
+codegen = { path = "./codegen", optional = true }
 bytes = "1.4.0"
 
 [features]
+default = [ "derive" ]
+derive = [ "codegen" ]

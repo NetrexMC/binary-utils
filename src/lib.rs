@@ -1,3 +1,4 @@
+#![feature(log_syntax)]
 /// Provides a panic-free way to read and write binary data.
 /// All of the methods within this module follow the protobuf specification at <https://protobuf.dev/programming-guides/encoding/>.
 ///
@@ -13,7 +14,7 @@
 /// ```
 pub mod interfaces;
 /// Provides a derive macro that implements `::binary_utils::interfaces::Reader<T>` and `::binary_utils::interfaces::Writer<T>`.
-/// 
+///
 pub use codegen::*;
 /// The io module contains implementations of these traits for `bytes::Buf` and `bytes::BufMut`.
 ///

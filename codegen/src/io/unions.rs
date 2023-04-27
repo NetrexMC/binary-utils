@@ -1,10 +1,10 @@
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use syn::{DeriveInput, DataUnion};
+use syn::DataUnion;
 
 use super::AstContext;
 
-pub(crate) fn derive_union(ast_ctx: AstContext, data: DataUnion, error_stream: &mut TokenStream2) -> TokenStream {
+pub(crate) fn derive_union(ast_ctx: AstContext, _: DataUnion, _: &mut TokenStream2) -> TokenStream {
     syn::Error::new_spanned(
         ast_ctx.0,
         "Unions are not supported by binary_utils, there is currently no way to implement the BinaryReader and BinaryWriter traits for unions."

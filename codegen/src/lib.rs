@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
+use quote::quote;
 
 mod io;
-mod legacy;
+// mod legacy;
 
 /// **DEPRECATED**.
 /// This is a legacy proc-macro that is used to generate a BufferStream.
@@ -27,9 +27,10 @@ mod legacy;
 /// }
 /// ```
 #[proc_macro_derive(BinaryStream)]
-pub fn derive_stream(input: TokenStream) -> TokenStream {
+pub fn derive_stream(_input: TokenStream) -> TokenStream {
     return syn::Error::new_spanned(
-        parse_macro_input!(input as DeriveInput),
+        // parse_macro_input!(input as DeriveInput),
+        quote!{},
         "This is a legacy proc-macro that is used to generate the BinaryStream\nDeprecated: use BinaryReader, and BinaryWriter instead."
     ).to_compile_error().into();
     // legacy::stream_parse(parse_macro_input!(input as DeriveInput))
@@ -37,7 +38,7 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
     //     .into()
 }
 
-#[proc_macro_derive(BinaryIo)]
+#[proc_macro_derive(BinaryIo, attributes(skip, require, satisfy))]
 pub fn derive_binary_io(input: TokenStream) -> TokenStream {
     io::binary_encoder(input)
 }
