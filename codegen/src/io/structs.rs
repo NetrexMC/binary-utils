@@ -78,7 +78,7 @@ pub(crate) fn derive_struct(
                     error_stream.append_all(
                         syn::Error::new_spanned(
                             field,
-                            "Cannot have more than one binary_utils Attribute on a field!",
+                            "Cannot have more than one binary_utils Attribute on a single field!",
                         )
                         .to_compile_error(),
                     );
@@ -218,7 +218,7 @@ pub(crate) fn derive_struct(
         Fields::Unit => {
             error_stream.append_all(syn::Error::new_spanned(
                 ast_ctx.0,
-                "Unit structs are not supported by binary_utils because they have no fields to parse or write.\nThis may change in the future, but for now, please use a tuple struct instead."
+                "Unit structs are not supported by binary_utils because they have no fields to parse or write.\nThis may change in the future, but for now, please use the skip attribute."
             ).to_compile_error());
             return quote!().into();
         }

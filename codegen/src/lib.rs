@@ -7,9 +7,9 @@ mod io;
 /// **DEPRECATED**.
 /// This is a legacy proc-macro that is used to generate a BufferStream.
 /// It provides an easy way to implement the `Streamable` trait.
+/// > ⚠️ This proc-macro has been deprecated since `0.3.0` in favor of `binary_utils::interfaces::Reader` and `binary_utils::interfaces::Writer` and will be removed in `0.4.0`.
 ///
-/// ## Deprecated
-/// Deprecated since `0.3.0` in favor of `BinaryReader` and `BinaryWriter`.
+/// This proc-macro automatically implements the `Streamable` trait for the struct or enum it is applied to.
 ///
 /// Example:
 /// ```ignore
@@ -24,6 +24,21 @@ mod io;
 /// fn main() {
 ///   let test = Test { a: 0, b: 0 };
 ///   test.parse().unwrap();
+/// }
+/// ```
+///
+/// Please note that this proc-macro does not support unit structs or named enum variants, meaning a code sample like the following will not work:
+/// ```warn
+/// use binary_utils::BinaryStream;
+///
+/// // Error: Unit structs are not supported.
+/// #[derive(BinaryStream)]
+/// struct Test;
+///
+/// // Error: Invalid variant.
+/// #[derive(BinaryStream)]
+/// enum TestEnum {
+///     B(Test)
 /// }
 /// ```
 #[proc_macro_derive(BinaryStream)]
@@ -73,7 +88,67 @@ pub fn derive_stream(_input: TokenStream) -> TokenStream {
 /// ---
 ///
 /// ## Enums
-/// Enums description has not been written as of yet...
+/// Enums function a bit differently than structs, and have a few more exclusive attributes that allow you to adjust the behavior of the macro.
+/// Identically to structs, this macro will encode/decode the fields of the enum in the order they are defined, as long as they are not skipped.
+/// > **Note:** Enums require the `#[repr]` attribute to be used, and the `#[repr]` attribute must be a primitive type.
+///
+/// ### Unit Variants
+/// Unit variants are the simplest variant, of an enum and require the `#[repr(usize)]` attribute to be used. <br />
+///
+/// **Example:**
+/// The following example will encode the `ProtcolEnum` enum as a `u8`, where each variant is encoded, by default, starting from 0.
+///
+/// ```ignore
+/// use binary_utils::BinaryIo;
+/// use binary_utils::{Reader, Writer};
+///
+/// #[derive(BinaryIo, Debug)]
+/// #[repr(u8)]
+/// pub enum ProtocolEnum {
+///     Basic,
+///     Advanced,
+///     Complex
+/// }
+/// ```
+///
+/// ### Unnamed Variants (Tuple)
+/// Unnamed variants allow you to encode the enum with a byte header specified by the discriminant. <br />
+/// However, this variant is limited to the same functionality as a struct. The containing data of each field
+/// within the variant must implement the `Reader` and `Writer` traits. Otherwise, this macro will fail with an error.
+///
+/// **Example:**
+/// The following example makes use of Unnamed variants, in this case `A` to encode both `B` and `C` retrospectively.
+/// Where `A::JustC` will be encoded as `0x02` with the binary data of struct `B`.
+/// ```ignore
+/// use binary_utils::BinaryIo;
+/// use binary_utils::{Reader, Writer};
+///
+/// #[derive(BinaryIo, Debug)]
+/// pub struct B {
+///     foo: String,
+///     bar: Vec<u8>
+/// }
+///
+/// #[derive(BinaryIo, Debug)]
+/// pub struct C {
+///     foobar: u32,
+/// }
+///
+/// #[derive(BinaryIo, Debug)]
+/// #[repr(u8)]
+/// pub enum A {
+///     JustB(B) = 1,
+///     JustC(C), // 2
+///     Both(B, C) // 3
+/// }
+///
+/// fn main() {
+///     let a = A::JustC(C { foobar: 4 });
+///     let buf = a.write_to_bytes().unwrap();
+///
+///     assert_eq!(buf, &[2, 4, 0, 0, 0]);
+/// }
+/// ```
 ///
 /// ---
 ///
@@ -121,7 +196,7 @@ pub fn derive_stream(_input: TokenStream) -> TokenStream {
 /// **Compatibility:**
 /// - ✅ Named Structs
 /// - ❌ Unnamed Structs
-/// - ✅ Enums
+/// - ❌ Enums
 ///
 /// **Example:**
 /// In the following example, `b` is explicitly required to be present when encoding, or decoding `ABC`, and it's value is not allowed to be `None`.
@@ -155,7 +230,7 @@ pub fn derive_stream(_input: TokenStream) -> TokenStream {
 /// **Compatibility:**
 /// - ✅ Named Structs
 /// - ❌ Unnamed Structs
-/// - ✅ Enums
+/// - ❌ Enums
 ///
 /// **Example:**
 /// ```ignore
