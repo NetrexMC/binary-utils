@@ -91,10 +91,10 @@ fn complex_packet_write() {
 
 /// Unnamed structs
 #[derive(BinaryIo, Debug, PartialEq)]
-struct SpecialStruct(bool, #[skip] Option<u8>);
+struct SpecialStruct(bool, #[skip] Option<u8>, #[skip] Option<u8>);
 
 #[test]
 fn special_struct_write() {
-    let special_struct = SpecialStruct(true, None);
+    let special_struct = SpecialStruct(true, None, None);
     assert_eq!(special_struct.write_to_bytes().unwrap().as_slice(), &[1]);
 }

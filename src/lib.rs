@@ -90,3 +90,4 @@ pub mod error {
 }
 
 pub use interfaces::Streamable;
+pub use io::{ByteReader, ByteWriter};
