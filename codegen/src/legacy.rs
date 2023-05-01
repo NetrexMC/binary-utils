@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, Span, TokenStream};
-use quote::{quote, ToTokens, TokenStreamExt};
+use quote::{quote, TokenStreamExt};
 use syn::{Attribute, Data, DeriveInput, Error, Expr, ExprLit, Fields, Lit, LitInt, Result, Type};
 
 pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
@@ -72,8 +72,7 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
             }
 
             let (mut writers, mut readers) = (Vec::<TokenStream>::new(), Vec::<TokenStream>::new());
-            let (mut new_writers, mut new_readers) =
-                (Vec::<TokenStream>::new(), Vec::<TokenStream>::new());
+            let mut new_writers = Vec::<TokenStream>::new();
 
             if !data.variants.iter().all(|v| match v.fields.clone() {
                 Fields::Unit => true,
