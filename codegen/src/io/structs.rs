@@ -199,13 +199,13 @@ pub(crate) fn derive_struct(
             //     .collect();
             quote! {
                 impl ::binary_utils::interfaces::Writer for #struct_name {
-                    fn write(&self, _binary_writew: &mut ::binary_utils::io::ByteWriter) -> Result<(), ::std::io::Error> {
+                    fn write(&self, _binary_writew: &mut ::binary_utils::io::ByteWriter) -> ::std::result::Result<(), ::std::io::Error> {
                         #writer
                         Ok(())
                     }
                 }
                 impl ::binary_utils::interfaces::Reader<#struct_name> for #struct_name {
-                    fn read(_binary_readerr: &mut ::binary_utils::io::ByteReader) -> Result<#struct_name, ::std::io::Error> {
+                    fn read(_binary_readerr: &mut ::binary_utils::io::ByteReader) -> ::std::result::Result<#struct_name, ::std::io::Error> {
                         // println!("impl Reader for {} called!\n-> {}", stringify!(#struct_name), stringify!(#reader));
                         #reader
                         Ok(Self(

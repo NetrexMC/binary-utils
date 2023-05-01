@@ -1,4 +1,3 @@
-#![feature(log_syntax)]
 /// Provides a panic-free way to read and write binary data.
 /// All of the methods within this module follow the protobuf specification at <https://protobuf.dev/programming-guides/encoding/>.
 ///
