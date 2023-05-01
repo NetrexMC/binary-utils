@@ -1,5 +1,5 @@
 # binary_util
-A panic-free way to read/write binary streams in rust.
+A panic-free binary utility crate to read/write binary streams over the wire.
 
 [Documentation](https://docs.rs/binary_util/) |
 [Discord](https://discord.gg/y4aWA5MQxK)
