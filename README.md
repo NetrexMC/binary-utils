@@ -4,7 +4,7 @@ A panic-free way to read/write binary streams in rust.
 [Documentation](https://docs.rs/binary_utils/) |
 [Discord](https://discord.gg/y4aWA5MQxK)
 
-## Usage
+## Generic Usage
 ```rust
 use binary_utils::{BinaryIo, BinaryReader, BinaryWriter};
 
@@ -29,3 +29,5 @@ fn main() {
     }
 }
 ```
+
+For more examples and usage, please refer to the [Documentation](https://docs.rs/binary_utils/).
