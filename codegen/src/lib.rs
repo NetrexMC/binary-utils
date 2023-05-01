@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
-use quote::quote;
+use syn::{parse_macro_input, DeriveInput};
 
 mod io;
-// mod legacy;
+mod legacy;
 
 /// **DEPRECATED**.
 /// This is a legacy proc-macro that is used to generate a BufferStream.
@@ -42,15 +42,15 @@ mod io;
 /// }
 /// ```
 #[proc_macro_derive(BinaryStream)]
-pub fn derive_stream(_input: TokenStream) -> TokenStream {
-    return syn::Error::new_spanned(
-        // parse_macro_input!(input as DeriveInput),
-        quote!{},
-        "This is a legacy proc-macro that is used to generate the BinaryStream\nDeprecated: use BinaryReader, and BinaryWriter instead."
-    ).to_compile_error().into();
-    // legacy::stream_parse(parse_macro_input!(input as DeriveInput))
-    //     .unwrap()
-    //     .into()
+pub fn derive_stream(input: TokenStream) -> TokenStream {
+    // return syn::Error::new_spanned(
+    //     // parse_macro_input!(input as DeriveInput),
+    //     quote!{},
+    //     "This is a legacy proc-macro that is used to generate the BinaryStream\nDeprecated: use BinaryReader, and BinaryWriter instead."
+    // ).to_compile_error().into();
+    legacy::stream_parse(parse_macro_input!(input as DeriveInput))
+        .unwrap()
+        .into()
 }
 
 /// This proc-macro implements both the `Reader` and `Writer` traits from `binary_utils::interfaces`.

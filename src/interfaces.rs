@@ -28,6 +28,14 @@ macro_rules! impl_writer {
     };
 }
 
+macro_rules! impl_streamable {
+    ($($t:ty),*) => {
+        $(
+            impl Streamable<$t> for $t {}
+        )*
+    };
+}
+
 /// Allows you to read from a `ByteReader` without needing to know the type.
 ///
 /// ```ignore
@@ -394,3 +402,5 @@ pub trait Streamable<T>: Reader<T> + Writer {
         Self::compose(source, position).unwrap()
     }
 }
+
+impl_streamable!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64, bool, char, String);

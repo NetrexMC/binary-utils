@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, Span, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{Attribute, Data, DeriveInput, Error, Expr, ExprLit, Fields, Lit, LitInt, Result, Type};
 
 pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
@@ -9,28 +9,49 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
     match input.data {
         Data::Struct(v) => {
             // iterate through struct fields
-            let (w, r) = impl_named_fields(v.fields);
+            let (w, r, new_reads) = impl_named_fields(v.fields);
             let writes = quote!(#(#w)*);
             let reads = quote!(#(#r),*);
             // get the visibility etc on each field
             // return a quote for block impl
             Ok(quote! {
                  #[automatically_derived]
-                 impl Streamable for #name {
+                 impl Streamable<#name> for #name {
                       fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
-                           use ::std::io::Write;
-                           let mut writer = Vec::new();
-                           #writes
-                           Ok(writer)
+                            use ::binary_utils::interfaces::{Reader, Writer};
+                            use ::binary_utils::io::ByteWriter;
+                            let mut writer = ByteWriter::new();
+                            #writes
+                            Ok(writer.as_slice().to_vec())
                       }
 
-                      fn compose(source: &[u8], position: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
+                      fn compose(s: &[u8], position: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
+                           use ::binary_utils::interfaces::{Reader, Writer};
                            use ::std::io::Read;
+                           let mut source = ::binary_utils::io::ByteReader::from(s);
                            Ok(Self {
                                 #reads
                            })
                       }
                  }
+
+                 impl ::binary_utils::interfaces::Writer for #name {
+                    fn write(&self, writer: &mut ::binary_utils::io::ByteWriter) -> Result<(), ::std::io::Error> {
+                            use ::binary_utils::interfaces::{Reader, Writer};
+                            #writes
+                            Ok(())
+                    }
+                }
+
+                impl ::binary_utils::interfaces::Reader<#name> for #name {
+                    fn read(source: &mut ::binary_utils::io::ByteReader) -> Result<Self, ::std::io::Error> {
+                        use ::binary_utils::interfaces::{Reader, Writer};
+                        // get the repr type and read it
+                        Ok(Self {
+                            #new_reads
+                        })
+                    }
+                }
             })
         }
         Data::Enum(data) => {
@@ -51,6 +72,8 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
             }
 
             let (mut writers, mut readers) = (Vec::<TokenStream>::new(), Vec::<TokenStream>::new());
+            let (mut new_writers, mut new_readers) =
+                (Vec::<TokenStream>::new(), Vec::<TokenStream>::new());
 
             if !data.variants.iter().all(|v| match v.fields.clone() {
                 Fields::Unit => true,
@@ -75,7 +98,15 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                             let var_name = variant.ident.clone();
                             // writers
                             writers.push(
-                                quote!(Self::#var_name => Ok((#discrim as #enum_ty).parse()?),),
+                                quote!(Self::#var_name => Ok((#discrim as #enum_ty).write_to_bytes().unwrap().as_slice().to_vec()),),
+                            );
+                            new_writers.push(
+                                quote!{
+                                    Self::#var_name => {
+                                        source.write((#discrim as #enum_ty).write_to_bytes()?.as_slice())?;
+                                        Ok(())
+                                    }
+                                }
                             );
                             // readers
                             readers.push(quote!(#discrim => Ok(Self::#var_name),));
@@ -107,7 +138,15 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
 
                                                 let var_name = variant.ident.clone();
                                                 // writers
-                                                writers.push(quote!(Self::#var_name => Ok((#discrim as #enum_ty).parse()?),));
+                                                writers.push(quote!(Self::#var_name => Ok((#discrim as #enum_ty).write_to_bytes()?),));
+                                                new_writers.push(
+                                                    quote!{
+                                                        Self::#var_name => {
+                                                            source.write((#discrim as #enum_ty).write_to_bytes()?.as_slice())?;
+                                                            Ok(())
+                                                        }
+                                                    }
+                                                );
                                                 // readers
                                                 readers
                                                     .push(quote!(#discrim => Ok(Self::#var_name),));
@@ -134,7 +173,15 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                                 let var_name = variant.ident.clone();
                                 // writers
                                 writers.push(
-                                    quote!(Self::#var_name => Ok((#discrim as #enum_ty).parse()?),),
+                                    quote!(Self::#var_name => Ok((#discrim as #enum_ty).write_to_bytes()?),),
+                                );
+                                new_writers.push(
+                                    quote!{
+                                        Self::#var_name => {
+                                            source.write((#discrim as #enum_ty).write_to_bytes()?.as_slice())?;
+                                            Ok(())
+                                        }
+                                    }
                                 );
                                 // readers
                                 readers.push(quote!(#discrim => Ok(Self::#var_name),));
@@ -156,16 +203,18 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
 
             Ok(quote! {
                 #[automatically_derived]
-                impl Streamable<#name> for #name {
+                impl ::binary_utils::interfaces::Streamable<#name> for #name {
                     fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
+                        use ::binary_utils::interfaces::{Reader, Writer};
                         match self {
                             #(#writers)*
                         }
                     }
 
                     fn compose(source: &[u8], offset: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
+                        use ::binary_utils::interfaces::{Reader, Writer};
                         // get the repr type and read it
-                        let v = <#enum_ty>::compose(source, offset)?;
+                        let v = <#enum_ty>::read(&mut ::binary_utils::io::ByteReader::from(source))?;
 
                         match v {
                             #(#readers)*
@@ -175,17 +224,19 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                 }
 
                 impl ::binary_utils::interfaces::Writer for #name {
-                    fn write(&self, buf: &mut ::binary_utils::io::ByteWriter) -> Result<(), ::std::io::Error> {
+                    fn write(&self, source: &mut ::binary_utils::io::ByteWriter) -> Result<(), ::std::io::Error> {
+                        use ::binary_utils::interfaces::{Reader, Writer};
                         match self {
-                            #(#writers)*
+                            #(#new_writers)*
                         }
                     }
                 }
 
                 impl ::binary_utils::interfaces::Reader<#name> for #name {
-                    fn read(buf: &mut ::binary_utils::io::ByteReader) -> Result<Self, ::std::io::Error> {
+                    fn read(source: &mut ::binary_utils::io::ByteReader) -> Result<Self, ::std::io::Error> {
+                        use ::binary_utils::interfaces::{Reader, Writer};
                         // get the repr type and read it
-                        let v = <#enum_ty>::compose(source, offset)?;
+                        let v = <#enum_ty>::read(source)?;
 
                         match v {
                             #(#readers)*
@@ -202,16 +253,18 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
     }
 }
 
-pub fn impl_named_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>) {
+pub fn impl_named_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>, TokenStream) {
     let mut writers = Vec::<TokenStream>::new();
     let mut readers = Vec::<TokenStream>::new();
+    let mut new_reads = TokenStream::new();
     match fields {
         Fields::Named(v) => {
             for field in &v.named {
                 let field_id = field.ident.as_ref().unwrap();
-                let (writer, reader) = impl_streamable_lazy(field_id, &field.ty);
+                let (writer, reader, nw) = impl_streamable_lazy(field_id, &field.ty);
                 writers.push(writer);
                 readers.push(reader);
+                new_reads.append_all(nw);
             }
         }
         Fields::Unnamed(_v) => {
@@ -221,7 +274,7 @@ pub fn impl_named_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>)
             panic!("Can not use uninitalized data values.")
         }
     }
-    (writers, readers)
+    (writers, readers, new_reads)
 }
 
 // pub fn impl_unnamed_fields(_fields: FieldsUnnamed) -> (TokenStream, TokenStream) {
@@ -229,10 +282,11 @@ pub fn impl_named_fields(fields: Fields) -> (Vec<TokenStream>, Vec<TokenStream>)
 //     todo!()
 // }
 
-pub fn impl_streamable_lazy(name: &Ident, ty: &Type) -> (TokenStream, TokenStream) {
+pub fn impl_streamable_lazy(name: &Ident, ty: &Type) -> (TokenStream, TokenStream, TokenStream) {
     (
-        quote! { writer.write(&self.#name.parse()?[..])?; },
-        quote!(#name: <#ty>::compose(&source, position)?),
+        quote! { writer.write(&self.#name.write_to_bytes().unwrap().as_slice()[..])?; },
+        quote!(#name: <#ty>::read(&mut source)?),
+        quote! { #name: <#ty>::read(source)?, },
     )
 }
 
