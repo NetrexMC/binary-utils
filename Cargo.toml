@@ -1,5 +1,5 @@
 [package]
-name = "binary-utils"
+name = "binary_utils"
 version = "0.3.0"
 authors = ["Bavfalcon9"]
 edition = "2021"
