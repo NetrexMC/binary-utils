@@ -1,6 +1,6 @@
-use binary_utils::interfaces::{Reader, Writer};
-use binary_utils::io::ByteReader;
-use binary_utils::BinaryIo;
+use binary_util::interfaces::{Reader, Writer};
+use binary_util::io::ByteReader;
+use binary_util::BinaryIo;
 
 #[derive(BinaryIo, Debug)]
 struct ABC {

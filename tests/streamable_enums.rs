@@ -1,4 +1,4 @@
-use binary_utils::{error::BinaryError, BinaryStream, Streamable};
+use binary_util::{error::BinaryError, BinaryStream, Streamable};
 
 #[derive(Debug, BinaryStream, PartialEq)]
 #[repr(u8)]

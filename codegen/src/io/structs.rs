@@ -78,7 +78,7 @@ pub(crate) fn derive_struct(
                     error_stream.append_all(
                         syn::Error::new_spanned(
                             field,
-                            "Cannot have more than one binary_utils Attribute on a single field!",
+                            "Cannot have more than one binary_util Attribute on a single field!",
                         )
                         .to_compile_error(),
                     );
@@ -117,14 +117,14 @@ pub(crate) fn derive_struct(
                 }
             }
             quote! {
-                impl ::binary_utils::interfaces::Writer for #struct_name {
-                    fn write(&self, _binary_writew: &mut ::binary_utils::io::ByteWriter) -> Result<(), ::std::io::Error> {
+                impl ::binary_util::interfaces::Writer for #struct_name {
+                    fn write(&self, _binary_writew: &mut ::binary_util::io::ByteWriter) -> Result<(), ::std::io::Error> {
                         #writer
                         Ok(())
                     }
                 }
-                impl ::binary_utils::interfaces::Reader<#struct_name> for #struct_name {
-                    fn read(_binary_readerr: &mut ::binary_utils::io::ByteReader) -> Result<#struct_name, ::std::io::Error> {
+                impl ::binary_util::interfaces::Reader<#struct_name> for #struct_name {
+                    fn read(_binary_readerr: &mut ::binary_util::io::ByteReader) -> Result<#struct_name, ::std::io::Error> {
                         // println!("impl Reader for {} called!\n-> {}", stringify!(#struct_name), stringify!(#reader));
                         #reader
                         Ok(Self {
@@ -153,7 +153,7 @@ pub(crate) fn derive_struct(
                     error_stream.append_all(
                         syn::Error::new_spanned(
                             field,
-                            "Cannot have more than one binary_utils Attribute on a field!",
+                            "Cannot have more than one binary_util Attribute on a field!",
                         )
                         .to_compile_error(),
                     );
@@ -198,14 +198,14 @@ pub(crate) fn derive_struct(
             //     .map(|i| syn::Ident::new(&format!("__unnamed_{}", i), proc_macro2::Span::call_site()))
             //     .collect();
             quote! {
-                impl ::binary_utils::interfaces::Writer for #struct_name {
-                    fn write(&self, _binary_writew: &mut ::binary_utils::io::ByteWriter) -> ::std::result::Result<(), ::std::io::Error> {
+                impl ::binary_util::interfaces::Writer for #struct_name {
+                    fn write(&self, _binary_writew: &mut ::binary_util::io::ByteWriter) -> ::std::result::Result<(), ::std::io::Error> {
                         #writer
                         Ok(())
                     }
                 }
-                impl ::binary_utils::interfaces::Reader<#struct_name> for #struct_name {
-                    fn read(_binary_readerr: &mut ::binary_utils::io::ByteReader) -> ::std::result::Result<#struct_name, ::std::io::Error> {
+                impl ::binary_util::interfaces::Reader<#struct_name> for #struct_name {
+                    fn read(_binary_readerr: &mut ::binary_util::io::ByteReader) -> ::std::result::Result<#struct_name, ::std::io::Error> {
                         // println!("impl Reader for {} called!\n-> {}", stringify!(#struct_name), stringify!(#reader));
                         #reader
                         Ok(Self(
@@ -218,7 +218,7 @@ pub(crate) fn derive_struct(
         Fields::Unit => {
             error_stream.append_all(syn::Error::new_spanned(
                 ast_ctx.0,
-                "Unit structs are not supported by binary_utils because they have no fields to parse or write.\nThis may change in the future, but for now, please use the skip attribute."
+                "Unit structs are not supported by binary_util because they have no fields to parse or write.\nThis may change in the future, but for now, please use the skip attribute."
             ).to_compile_error());
             return quote!().into();
         }

@@ -7,13 +7,13 @@ mod legacy;
 /// **DEPRECATED**.
 /// This is a legacy proc-macro that is used to generate a BufferStream.
 /// It provides an easy way to implement the `Streamable` trait.
-/// > ⚠️ This proc-macro has been deprecated since `0.3.0` in favor of `binary_utils::interfaces::Reader` and `binary_utils::interfaces::Writer` and will be removed in `0.4.0`.
+/// > ⚠️ This proc-macro has been deprecated since `0.3.0` in favor of `binary_util::interfaces::Reader` and `binary_util::interfaces::Writer` and will be removed in `0.4.0`.
 ///
 /// This proc-macro automatically implements the `Streamable` trait for the struct or enum it is applied to.
 ///
 /// Example:
 /// ```ignore
-/// use binary_utils::BinaryStream;
+/// use binary_util::BinaryStream;
 ///
 /// #[derive(BinaryStream)]
 /// struct Test {
@@ -29,7 +29,7 @@ mod legacy;
 ///
 /// Please note that this proc-macro does not support unit structs or named enum variants, meaning a code sample like the following will not work:
 /// ```warn
-/// use binary_utils::BinaryStream;
+/// use binary_util::BinaryStream;
 ///
 /// // Error: Unit structs are not supported.
 /// #[derive(BinaryStream)]
@@ -53,7 +53,7 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
         .into()
 }
 
-/// This proc-macro implements both the `Reader` and `Writer` traits from `binary_utils::interfaces`.
+/// This proc-macro implements both the `Reader` and `Writer` traits from `binary_util::interfaces`.
 /// It is important to note that not all attributes can be used on all types, and some attributes are exclusive to certain variants.
 ///
 /// ## Structs
@@ -65,8 +65,8 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 /// The following example will provide both a `Reader` and `Writer` implementation for the struct `ABC`, where each field is encoded as it's respective
 /// type to the `Bytewriter`/`Bytereader`.
 /// ```ignore
-/// use binary_utils::interfaces::{Reader, Writer};
-/// use binary_utils::BinaryIo;
+/// use binary_util::interfaces::{Reader, Writer};
+/// use binary_util::BinaryIo;
 ///
 /// #[derive(BinaryIo, Debug)]
 /// struct ABC {
@@ -79,8 +79,8 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 /// Sometimes it can be more optimal to use Unnamed fields, if you do not care about the field names, and only want to encode/decode the fields in the order they are defined.
 /// The behavior of this macro is the same as the previous example, except the fields are unnamed.
 /// ```ignore
-/// use binary_utils::interfaces::{Reader, Writer};
-/// use binary_utils::BinaryIo;
+/// use binary_util::interfaces::{Reader, Writer};
+/// use binary_util::BinaryIo;
 ///
 /// #[derive(BinaryIo, Debug)]
 /// struct ABC(u8, Option<u8>, u8);
@@ -99,8 +99,8 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 /// The following example will encode the `ProtcolEnum` enum as a `u8`, where each variant is encoded, by default, starting from 0.
 ///
 /// ```ignore
-/// use binary_utils::BinaryIo;
-/// use binary_utils::{Reader, Writer};
+/// use binary_util::BinaryIo;
+/// use binary_util::{Reader, Writer};
 ///
 /// #[derive(BinaryIo, Debug)]
 /// #[repr(u8)]
@@ -120,8 +120,8 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 /// The following example makes use of Unnamed variants, in this case `A` to encode both `B` and `C` retrospectively.
 /// Where `A::JustC` will be encoded as `0x02` with the binary data of struct `B`.
 /// ```ignore
-/// use binary_utils::BinaryIo;
-/// use binary_utils::{Reader, Writer};
+/// use binary_util::BinaryIo;
+/// use binary_util::{Reader, Writer};
 ///
 /// #[derive(BinaryIo, Debug)]
 /// pub struct B {
@@ -172,8 +172,8 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 ///
 /// **Example:**
 /// ```ignore
-/// use binary_utils::interfaces::{Reader, Writer};
-/// use binary_utils::BinaryIo;
+/// use binary_util::interfaces::{Reader, Writer};
+/// use binary_util::BinaryIo;
 ///
 /// #[derive(BinaryIo, Debug)]
 /// struct ABC {
@@ -201,8 +201,8 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 /// **Example:**
 /// In the following example, `b` is explicitly required to be present when encoding, or decoding `ABC`, and it's value is not allowed to be `None`.
 /// ```ignore
-/// use binary_utils::interfaces::{Reader, Writer};
-/// use binary_utils::BinaryIo;
+/// use binary_util::interfaces::{Reader, Writer};
+/// use binary_util::BinaryIo;
 ///
 /// #[derive(BinaryIo, Debug)]
 /// struct ABC {

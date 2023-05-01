@@ -1,4 +1,4 @@
-use binary_utils::io::{ByteReader, ByteWriter};
+use binary_util::io::{ByteReader, ByteWriter};
 
 pub const FIVE_BYTE_VARINT: &[u8] = &[255, 255, 255, 255, 7]; // 2147483647
 pub const THREE_BYTE_VARINT: &[u8] = &[255, 255, 127]; // 2097151

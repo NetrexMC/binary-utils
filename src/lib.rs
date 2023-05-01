@@ -3,7 +3,7 @@
 ///
 /// ## Example
 /// ```no_run
-/// use binary_utils::io::ByteReader;
+/// use binary_util::io::ByteReader;
 ///
 /// const VARINT: &[u8] = &[255, 255, 255, 255, 7]; // 2147483647
 /// fn main() {
@@ -12,14 +12,14 @@
 /// }
 /// ```
 pub mod interfaces;
-/// Provides a derive macro that implements `::binary_utils::interfaces::Reader<T>` and `::binary_utils::interfaces::Writer<T>`.
+/// Provides a derive macro that implements `::binary_util::interfaces::Reader<T>` and `::binary_util::interfaces::Writer<T>`.
 ///
 pub use codegen::*;
 /// The io module contains implementations of these traits for `bytes::Buf` and `bytes::BufMut`.
 ///
 /// Example:
 /// ```no_run
-/// use binary_utils::io::ByteReader;
+/// use binary_util::io::ByteReader;
 /// use bytes::{Buf, BufMut, BytesMut, Bytes};
 ///
 /// fn main() {

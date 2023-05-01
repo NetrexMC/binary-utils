@@ -17,35 +17,35 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
             Ok(quote! {
                  #[automatically_derived]
                  impl Streamable<#name> for #name {
-                      fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
-                            use ::binary_utils::interfaces::{Reader, Writer};
-                            use ::binary_utils::io::ByteWriter;
+                      fn parse(&self) -> Result<Vec<u8>, ::binary_util::error::BinaryError> {
+                            use ::binary_util::interfaces::{Reader, Writer};
+                            use ::binary_util::io::ByteWriter;
                             let mut writer = ByteWriter::new();
                             #writes
                             Ok(writer.as_slice().to_vec())
                       }
 
-                      fn compose(s: &[u8], position: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
-                           use ::binary_utils::interfaces::{Reader, Writer};
+                      fn compose(s: &[u8], position: &mut usize) -> Result<Self, ::binary_util::error::BinaryError> {
+                           use ::binary_util::interfaces::{Reader, Writer};
                            use ::std::io::Read;
-                           let mut source = ::binary_utils::io::ByteReader::from(s);
+                           let mut source = ::binary_util::io::ByteReader::from(s);
                            Ok(Self {
                                 #reads
                            })
                       }
                  }
 
-                 impl ::binary_utils::interfaces::Writer for #name {
-                    fn write(&self, writer: &mut ::binary_utils::io::ByteWriter) -> Result<(), ::std::io::Error> {
-                            use ::binary_utils::interfaces::{Reader, Writer};
+                 impl ::binary_util::interfaces::Writer for #name {
+                    fn write(&self, writer: &mut ::binary_util::io::ByteWriter) -> Result<(), ::std::io::Error> {
+                            use ::binary_util::interfaces::{Reader, Writer};
                             #writes
                             Ok(())
                     }
                 }
 
-                impl ::binary_utils::interfaces::Reader<#name> for #name {
-                    fn read(source: &mut ::binary_utils::io::ByteReader) -> Result<Self, ::std::io::Error> {
-                        use ::binary_utils::interfaces::{Reader, Writer};
+                impl ::binary_util::interfaces::Reader<#name> for #name {
+                    fn read(source: &mut ::binary_util::io::ByteReader) -> Result<Self, ::std::io::Error> {
+                        use ::binary_util::interfaces::{Reader, Writer};
                         // get the repr type and read it
                         Ok(Self {
                             #new_reads
@@ -202,18 +202,18 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
 
             Ok(quote! {
                 #[automatically_derived]
-                impl ::binary_utils::interfaces::Streamable<#name> for #name {
-                    fn parse(&self) -> Result<Vec<u8>, ::binary_utils::error::BinaryError> {
-                        use ::binary_utils::interfaces::{Reader, Writer};
+                impl ::binary_util::interfaces::Streamable<#name> for #name {
+                    fn parse(&self) -> Result<Vec<u8>, ::binary_util::error::BinaryError> {
+                        use ::binary_util::interfaces::{Reader, Writer};
                         match self {
                             #(#writers)*
                         }
                     }
 
-                    fn compose(source: &[u8], offset: &mut usize) -> Result<Self, ::binary_utils::error::BinaryError> {
-                        use ::binary_utils::interfaces::{Reader, Writer};
+                    fn compose(source: &[u8], offset: &mut usize) -> Result<Self, ::binary_util::error::BinaryError> {
+                        use ::binary_util::interfaces::{Reader, Writer};
                         // get the repr type and read it
-                        let v = <#enum_ty>::read(&mut ::binary_utils::io::ByteReader::from(source))?;
+                        let v = <#enum_ty>::read(&mut ::binary_util::io::ByteReader::from(source))?;
 
                         match v {
                             #(#readers)*
@@ -222,18 +222,18 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                     }
                 }
 
-                impl ::binary_utils::interfaces::Writer for #name {
-                    fn write(&self, source: &mut ::binary_utils::io::ByteWriter) -> Result<(), ::std::io::Error> {
-                        use ::binary_utils::interfaces::{Reader, Writer};
+                impl ::binary_util::interfaces::Writer for #name {
+                    fn write(&self, source: &mut ::binary_util::io::ByteWriter) -> Result<(), ::std::io::Error> {
+                        use ::binary_util::interfaces::{Reader, Writer};
                         match self {
                             #(#new_writers)*
                         }
                     }
                 }
 
-                impl ::binary_utils::interfaces::Reader<#name> for #name {
-                    fn read(source: &mut ::binary_utils::io::ByteReader) -> Result<Self, ::std::io::Error> {
-                        use ::binary_utils::interfaces::{Reader, Writer};
+                impl ::binary_util::interfaces::Reader<#name> for #name {
+                    fn read(source: &mut ::binary_util::io::ByteReader) -> Result<Self, ::std::io::Error> {
+                        use ::binary_util::interfaces::{Reader, Writer};
                         // get the repr type and read it
                         let v = <#enum_ty>::read(source)?;
 

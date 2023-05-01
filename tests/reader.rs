@@ -1,4 +1,4 @@
-use binary_utils::io::ByteReader;
+use binary_util::io::ByteReader;
 
 // A slice of bytes that is used to test the reader.
 // this specific slice is encoded as the following:

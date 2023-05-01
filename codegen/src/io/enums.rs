@@ -241,8 +241,8 @@ pub(crate) fn derive_enum(
     let read_streams = variants.iter().map(|variant| variant.read_content.clone()).collect::<Vec<TokenStream2>>();
 
     quote! {
-        impl ::binary_utils::interfaces::Writer for #enum_name {
-            fn write(&self, _binary_writew: &mut ::binary_utils::io::ByteWriter) -> ::std::result::Result<(), ::std::io::Error> {
+        impl ::binary_util::interfaces::Writer for #enum_name {
+            fn write(&self, _binary_writew: &mut ::binary_util::io::ByteWriter) -> ::std::result::Result<(), ::std::io::Error> {
                 match self {
                     #(#write_streams)*
                 };
@@ -251,8 +251,8 @@ pub(crate) fn derive_enum(
             }
         }
 
-        impl ::binary_utils::interfaces::Reader<#enum_name> for #enum_name {
-            fn read(_binary_readerr: &mut ::binary_utils::io::ByteReader) -> ::std::result::Result<#enum_name, ::std::io::Error> {
+        impl ::binary_util::interfaces::Reader<#enum_name> for #enum_name {
+            fn read(_binary_readerr: &mut ::binary_util::io::ByteReader) -> ::std::result::Result<#enum_name, ::std::io::Error> {
                 match <#repr_type>::read(_binary_readerr)? {
                     #(#read_streams)*
                     _ => Err(::std::io::Error::new(::std::io::ErrorKind::InvalidData, "Invalid enum discriminant."))

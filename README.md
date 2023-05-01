@@ -1,12 +1,12 @@
-# binary_utils
+# binary_util
 A panic-free way to read/write binary streams in rust.
 
-[Documentation](https://docs.rs/binary_utils/) |
+[Documentation](https://docs.rs/binary_util/) |
 [Discord](https://discord.gg/y4aWA5MQxK)
 
 ## Generic Usage
 ```rust
-use binary_utils::{BinaryIo, BinaryReader, BinaryWriter};
+use binary_util::{BinaryIo, BinaryReader, BinaryWriter};
 
 #[derive(BinaryIo)]
 pub struct MyStruct {
@@ -30,4 +30,4 @@ fn main() {
 }
 ```
 
-For more examples and usage, please refer to the [Documentation](https://docs.rs/binary_utils/).
+For more examples and usage, please refer to the [Documentation](https://docs.rs/binary_util/).

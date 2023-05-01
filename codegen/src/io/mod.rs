@@ -13,7 +13,7 @@ pub(crate) type AstContext<'a> = (
     &'a syn::Visibility,
 );
 
-// BinaryEncoder is a derive macro that implements `::binary_utils::interfaces::Reader<T>` and `::binary_utils::interfaces::Writer<T>`
+// BinaryEncoder is a derive macro that implements `::binary_util::interfaces::Reader<T>` and `::binary_util::interfaces::Writer<T>`
 pub(crate) fn binary_encoder(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let ctx: AstContext = (&input.ident, &input.attrs, &input.generics, &input.vis);

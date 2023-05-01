@@ -39,7 +39,7 @@ macro_rules! impl_streamable {
 /// Allows you to read from a `ByteReader` without needing to know the type.
 ///
 /// ```ignore
-/// use binary_utils::io::{ByteReader, Reader};
+/// use binary_util::io::{ByteReader, Reader};
 ///
 /// pub struct MyStruct {
 ///    pub a: u8,
@@ -186,7 +186,7 @@ impl Reader<SocketAddr> for SocketAddr {
 /// Allows you to write to a `ByteWriter` without needing to know the type.
 ///
 /// ```ignore
-/// use binary_utils::io::{ByteWriter, Writer};
+/// use binary_util::io::{ByteWriter, Writer};
 ///
 /// pub struct MyStruct {
 ///   pub a: u8,
@@ -324,8 +324,8 @@ impl Writer for SocketAddr {
 ///
 /// ### New Implementation Example
 /// ```ignore
-/// use binary_utils::io::{ByteReader, ByteWriter};
-/// use binary_utils::interfaces::{Reader, Writer};
+/// use binary_util::io::{ByteReader, ByteWriter};
+/// use binary_util::interfaces::{Reader, Writer};
 ///
 /// pub struct MyStruct;
 ///
@@ -337,7 +337,7 @@ impl Writer for SocketAddr {
 /// A trait to parse and unparse header structs from a given buffer.
 ///
 /// ```ignore
-/// use binary_utils::{Streamable, error::BinaryError};
+/// use binary_util::{Streamable, error::BinaryError};
 ///
 /// struct Foo {
 ///     bar: u8,

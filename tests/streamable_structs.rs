@@ -1,4 +1,4 @@
-use binary_utils::{BinaryStream, Streamable};
+use binary_util::{BinaryStream, Streamable};
 
 #[derive(Debug, BinaryStream)]
 pub struct TestPacket {

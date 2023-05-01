@@ -53,7 +53,7 @@ macro_rules! write_fn {
 ///
 /// ## Example
 /// ```rust
-/// use binary_utils::io::ByteReader;
+/// use binary_util::io::ByteReader;
 ///
 /// fn main() {
 ///    let mut buf = ByteReader::from(&[0, 253, 255, 255, 255, 15][..]);
@@ -70,7 +70,7 @@ macro_rules! write_fn {
 /// increment the read position of the stream, but rather copies the byte at the
 /// specified position.
 /// ```rust
-/// use binary_utils::io::ByteReader;
+/// use binary_util::io::ByteReader;
 ///
 /// fn main() {
 ///    let mut buf = ByteReader::from(&[253, 255, 14, 255, 255, 15][..]);
@@ -87,7 +87,7 @@ macro_rules! write_fn {
 /// This is useful if you are trying to read a struct or optional type and validate the type before
 /// reading the rest of the struct.
 /// ```rust
-/// use binary_utils::io::ByteReader;
+/// use binary_util::io::ByteReader;
 ///
 /// struct PingPacket {
 ///    pub id: u8,
@@ -173,7 +173,7 @@ impl ByteReader {
     /// increment the read position of the stream, but rather copies the byte at the
     /// specified position.
     /// ```rust
-    /// use binary_utils::io::ByteReader;
+    /// use binary_util::io::ByteReader;
     ///
     /// fn main() {
     ///    let mut buf = ByteReader::from(&[253, 255, 14, 255, 255, 15][..]);
@@ -426,8 +426,8 @@ impl ByteReader {
     ///
     /// # Example
     /// ```rust
-    /// use binary_utils::io::ByteReader;
-    /// use binary_utils::interfaces::Reader;
+    /// use binary_util::io::ByteReader;
+    /// use binary_util::interfaces::Reader;
     ///
     /// pub struct HelloWorld {
     ///     pub magic: u32
@@ -492,8 +492,8 @@ impl ByteReader {
 /// ## Example
 /// A generic example of how to use the `ByteWriter` struct.
 /// ```rust
-/// use binary_utils::io::ByteWriter;
-/// use binary_utils::io::ByteReader;
+/// use binary_util::io::ByteWriter;
+/// use binary_util::io::ByteReader;
 ///
 /// fn main() {
 ///    let mut writer = ByteWriter::new();
@@ -507,8 +507,8 @@ impl ByteReader {
 ///
 /// `ByteWriter` also implements the `Into` trait to convert the `ByteWriter` into a `BytesMut` or `Bytes` structs.
 /// ```rust
-/// use binary_utils::io::ByteWriter;
-/// use binary_utils::io::ByteReader;
+/// use binary_util::io::ByteWriter;
+/// use binary_util::io::ByteReader;
 ///
 /// fn main() {
 ///     let mut writer = ByteWriter::new();
@@ -749,8 +749,8 @@ impl ByteWriter {
     ///
     /// ## Example
     /// ```rust
-    /// use binary_utils::io::ByteWriter;
-    /// use binary_utils::interfaces::Writer;
+    /// use binary_util::io::ByteWriter;
+    /// use binary_util::interfaces::Writer;
     ///
     /// pub struct HelloWorld {
     ///     pub magic: u32

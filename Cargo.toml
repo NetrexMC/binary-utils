@@ -1,11 +1,12 @@
 [package]
-name = "binary-utils"
+name = "binary-util"
 version = "0.3.0"
 authors = ["NetrexMC"]
 edition = "2021"
 include = ["src/**/*", "README.md"]
 description = "A panic-free way to read/write binary streams in rust."
 license = "Apache-2.0"
+repository = "https://github.com/NetrexMC/binary-util"
 
 [dependencies]
 codegen = { path = "./codegen", version = "0.1.0", optional = true }
