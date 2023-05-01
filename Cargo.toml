@@ -1,5 +1,5 @@
 [package]
-name = "binary_utils"
+name = "binary-utils"
 version = "0.3.0"
 authors = ["NetrexMC"]
 edition = "2021"
