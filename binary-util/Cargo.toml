@@ -1,6 +1,6 @@
 [package]
 name = "binary-util"
-version = "0.3.2"
+version = "0.3.3-rc.1"
 authors = ["NetrexMC"]
 edition = "2021"
 include = ["src/**/*", "README.md"]
@@ -9,5 +9,5 @@ license = "Apache-2.0"
 repository = "https://github.com/NetrexMC/binary-utils"
 
 [dependencies]
-binary-util-derive = { path = "../binary-util-derive", version = "0.1.0" }
+binary-util-derive = { path = "../binary-util-derive", version = "0.1.1-rc.1" }
 bytes = "1.4.0"
