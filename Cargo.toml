@@ -1,6 +1,6 @@
 [package]
 name = "binary-util"
-version = "0.3.1"
+version = "0.3.1-rc.1"
 authors = ["NetrexMC"]
 edition = "2021"
 include = ["src/**/*", "README.md"]
