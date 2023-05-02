@@ -2,7 +2,6 @@
 name = "codegen"
 version = "0.1.0"
 edition = "2021"
-private = true
 
 [lib]
 proc-macro = true
