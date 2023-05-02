@@ -260,7 +260,7 @@
 pub mod interfaces;
 /// Provides a derive macro that implements `::binary_util::interfaces::Reader<T>` and `::binary_util::interfaces::Writer<T>`.
 ///
-pub use binary_util_codegen::*;
+pub use binary_util_derive::*;
 /// The io module contains implementations of these traits for `bytes::Buf` and `bytes::BufMut`.
 ///
 /// Example:

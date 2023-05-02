@@ -9,5 +9,10 @@ license = "Apache-2.0"
 repository = "https://github.com/NetrexMC/binary-utils"
 
 [dependencies]
-binary-util-codegen = { path = "./codegen", version = "0.1.0" }
+binary-util-derive = { path = "./derive", version = "0.1.0" }
 bytes = "1.4.0"
+
+[workspace]
+members = [
+    "binary-util-derive",
+]

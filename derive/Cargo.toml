@@ -1,7 +1,12 @@
 [package]
-name = "binary-util-codegen"
+name = "binary-util-derive"
 version = "0.1.0"
 edition = "2021"
+authors = ["NetrexMC"]
+include = ["src/**/*", "README.md"]
+description = "Proc Macros for binary-util"
+license = "Apache-2.0"
+repository = "https://github.com/NetrexMC/binary-utils"
 
 [lib]
 proc-macro = true
