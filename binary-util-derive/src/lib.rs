@@ -1,3 +1,6 @@
+//! This crate provides a set of proc-macros that can be used to derive traits from `binary-util`.
+//! This crate is not intended to be used directly, and is only used as a dependency for `binary-util`.
+//! If you are looking for a way to implement the `Reader` and `Writer` traits, please see the documentation for `binary-util`.
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 

@@ -1,0 +1,13 @@
+[package]
+name = "binary-util"
+version = "0.3.1-rc.2"
+authors = ["NetrexMC"]
+edition = "2021"
+include = ["src/**/*", "README.md"]
+description = "A panic-free binary utility crate to read/write binary streams over the wire."
+license = "Apache-2.0"
+repository = "https://github.com/NetrexMC/binary-utils"
+
+[dependencies]
+binary-util-derive = { path = "../binary-util-derive", version = "0.1.0" }
+bytes = "1.4.0"
