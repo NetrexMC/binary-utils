@@ -164,7 +164,7 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 /// The `#[skip]` attribute does as the name implies, and can be used to skip a field when encoding/decoding. <br />
 ///
 /// **Syntax:**
-/// ```rust
+/// ```ignore
 /// #[skip]
 /// ```
 ///
@@ -192,7 +192,7 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 /// This can be useful if you want to ensure that an optional field is present when encoding, or decoding it.
 ///
 /// **Syntax:**
-/// ```rust
+/// ```ignore
 /// #[require(FIELD)]
 /// ```
 ///
@@ -227,7 +227,7 @@ pub fn derive_stream(input: TokenStream) -> TokenStream {
 ///
 /// **Syntax:**
 ///
-/// ```rust
+/// ```ignore
 /// #[satisfy(EXPR)]
 /// ```
 /// **Compatibility:**

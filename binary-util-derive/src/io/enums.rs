@@ -33,7 +33,7 @@ struct ParsedEnumVariant {
     /// The contents to append when writing. this variant.
     /// This content will be appended within the expression of the match arm.
     /// IE `<HERE>` in the following example:
-    /// ```rust
+    /// ```ignore
     /// #[repr(u8)]
     /// enum MyEnum {
     ///    Unit, // 0
@@ -42,7 +42,7 @@ struct ParsedEnumVariant {
     /// }
     ///
     /// impl Writer for MyEnum {
-    ///     pub fn write(&self, writer: &mut ByteWruter) -> Result<(), std::io::Error> {
+    ///     pub fn write(&self, writer: &mut ByteWriter) -> Result<(), std::io::Error> {
     ///         match self {
     ///             MyEnum::Unit => {
     ///                // <HERE>
@@ -64,7 +64,7 @@ struct ParsedEnumVariant {
     /// The contents to append when reading this variant.
     /// Similar to `write_content`, this content will be appended within the expression of the match arm.
     /// IE `<HERE>` in the following example:
-    /// ```rust
+    /// ```ignore
     /// #[repr(u8)]
     /// enum MyEnum {
     ///     Unit, // 0
