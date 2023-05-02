@@ -4,7 +4,9 @@ use binary_util::BinaryIo;
 
 #[derive(BinaryIo, Debug)]
 struct ABC {
+    /// Test with comments
     a: u8,
+    // Test with comments
     #[satisfy(self.a == 10)]
     b: Option<u8>,
     c: u8,

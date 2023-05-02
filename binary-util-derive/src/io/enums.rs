@@ -179,7 +179,12 @@ pub(crate) fn derive_enum(
             .iter()
             .filter_map(|att| {
                 match parse_attribute(&att, error_stream) {
-                    Ok(attr) => Some(attr),
+                    Ok(attr) => {
+                        match attr {
+                            IoAttr::Unknown => None,
+                            _ => Some(attr),
+                        }
+                    }
                     Err(_) => None
                 }
             })
@@ -197,7 +202,8 @@ pub(crate) fn derive_enum(
                         .to_compile_error()
                     );
                     return TokenStream::new();
-                }
+                },
+                _ => {}
             }
         }
 
@@ -287,7 +293,12 @@ fn parse_enum_variant(
                     .iter()
                     .filter_map(|att| {
                         match parse_attribute(&att, error_stream) {
-                            Ok(attr) => Some(attr),
+                            Ok(attr) => {
+                                match attr {
+                                    IoAttr::Unknown => None,
+                                    _ => Some(attr),
+                                }
+                            },
                             Err(_) => None,
                         }
                     })

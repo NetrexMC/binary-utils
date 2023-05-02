@@ -15,6 +15,7 @@ pub(crate) mod attrs {
         Require(syn::Ident),
         IfPresent(syn::Ident),
         Skip,
+        Unknown
     }
 
     /// Parses the attributes of a struct or enum.
@@ -73,13 +74,14 @@ pub(crate) mod attrs {
             // there are no other attributes
             return Ok(IoAttr::Skip);
         } else {
-            error_stream.append_all(
-                syn::Error::new_spanned(
-                    attr,
-                    "Unknown attribute, did you mean 'satisfy', 'require', 'if_present', or 'skip'?",
-                )
-                .to_compile_error(),
-            );
+            return Ok(IoAttr::Unknown);
+            // error_stream.append_all(
+            //     syn::Error::new_spanned(
+            //         attr,
+            //         "Unknown attribute, did you mean 'satisfy', 'require', 'if_present', or 'skip'?",
+            //     )
+            //     .to_compile_error(),
+            // );
         }
 
         Err(())

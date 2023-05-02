@@ -68,7 +68,12 @@ pub(crate) fn derive_struct(
                     .iter()
                     .filter_map(|att| {
                         match super::util::attrs::parse_attribute(&att, error_stream) {
-                            Ok(attr) => Some(attr),
+                            Ok(attr) => {
+                                match attr {
+                                    IoAttr::Unknown => None,
+                                    _ => Some(attr),
+                                }
+                            }
                             Err(_) => None,
                         }
                     })
@@ -143,7 +148,12 @@ pub(crate) fn derive_struct(
                     .iter()
                     .filter_map(|att| {
                         match super::util::attrs::parse_attribute(&att, error_stream) {
-                            Ok(attr) => Some(attr),
+                            Ok(attr) => {
+                                match attr {
+                                    IoAttr::Unknown => None,
+                                    _ => Some(attr),
+                                }
+                            },
                             Err(_) => None,
                         }
                     })
@@ -335,6 +345,10 @@ fn parse_attributes<'a>(tokens: TokenStream2, attr: &'a IoAttr, ty: &'a syn::Typ
                 // we skip this field
                 let #read_name: #ty = Default::default();
             ));
+            None
+        },
+        _ => {
+            // we don't have an attribute, so we just return the tokens.
             None
         }
     }
