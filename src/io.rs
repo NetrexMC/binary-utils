@@ -481,6 +481,12 @@ impl ByteReader {
         }
     }
 
+    /// Reads `T` from the stream.
+    /// `T` must implement the `Reader` trait and be sized.
+    pub fn read_struct<T: Reader<T>>(&mut self) -> Result<T, std::io::Error> {
+        return T::read(self);
+    }
+
     /// Returns the remaining bytes in the stream.
     pub fn as_slice(&self) -> &[u8] {
         self.buf.chunk()
@@ -802,6 +808,55 @@ impl ByteWriter {
         } else {
             return Err(Error::new(std::io::ErrorKind::OutOfMemory, ERR_EOM));
         }
+    }
+
+    /// Writes `T` to the buffer. `T` must implement the `Writer` trait.
+    /// This is the same as calling `T.write(self)`.
+    /// ```rust
+    /// use binary_util::interfaces::{Reader, Writer};
+    /// use binary_util::io::{ByteReader, ByteWriter};
+    ///
+    /// pub struct HelloPacket {
+    ///     pub name: String,
+    ///     pub age: u8,
+    ///     pub is_cool: bool,
+    ///     pub friends: Vec<String>,
+    /// }
+    ///
+    /// impl Reader<HelloPacket> for HelloPacket {
+    ///     fn read(buf: &mut ByteReader) -> std::io::Result<Self> {
+    ///         Ok(Self {
+    ///             name: buf.read_string()?,
+    ///             age: buf.read_u8()?,
+    ///             is_cool: buf.read_bool()?,
+    ///             friends: Vec::<String>::read(buf)?
+    ///         })
+    ///     }
+    /// }
+    ///
+    /// impl Writer for HelloPacket {
+    ///     fn write(&self, buf: &mut ByteWriter) -> std::io::Result<()> {
+    ///         buf.write_string(&self.name);
+    ///         buf.write_u8(self.age);
+    ///         buf.write_bool(self.is_cool);
+    ///         self.friends.write(buf)?;
+    ///         Ok(())
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     let mut buf = ByteWriter::new();
+    ///     let packet = HelloPacket {
+    ///         name: "John".to_string(),
+    ///         age: 18,
+    ///         is_cool: true,
+    ///         friends: vec!["Bob".to_string(), "Joe".to_string()]
+    ///     };
+    ///     buf.write_type(&packet).unwrap();
+    /// }
+    /// ```
+    pub fn write_type<T: Writer>(&mut self, t: &T) -> Result<(), std::io::Error> {
+        t.write(self)
     }
 
     pub fn as_slice(&self) -> &[u8] {
