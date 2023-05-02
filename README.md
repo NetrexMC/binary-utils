@@ -2,17 +2,17 @@
 
 A panic-free binary utility crate to read/write binary streams over the wire.
 
-[Documentation](https://docs.rs/binary_util/) |
+[Documentation](https://docs.rs/binary-util/latest/) |
 [Discord](https://discord.gg/y4aWA5MQxK)
 
 ---
 
 BinaryUtils provides the following features:
 
-* [`binary_util::io`], to read and write to streams manually.
-* [`binary_util::interfaces`], to allow automation of reading data structures.
-* [`binary_util::BinaryIo`], to automatically implement [`binary_util::interfaces::Reader`]
-  and [`binary_util::interfaces::Writer`] .
+* [`binary_util::io`](https://docs.rs/binary-util/latest/binary_util/io), to read and write to streams manually.
+* [`binary_util::interfaces`](https://docs.rs/binary-util/latest/binary_util/interfaces), to allow automation of reading data structures.
+* [`binary_util::BinaryIo`](https://docs.rs/binary-util-derive/latest), to automatically implement [`binary_util::interfaces::Reader`](https://docs.rs/binary-util/latest/binary_util/interfaces)
+  and [`binary_util::interfaces::Writer`](https://docs.rs/binary-util/latest/binary_util/interfaces) .
 
 # Getting Started
 
@@ -39,10 +39,11 @@ binary_util = { version = "0.3.0", default-features = false, features = ["derive
 
 # Binary IO
 
-The [`io`] module provides a way to contingiously write and read binary data with the garauntees of being panic-free.
-This module provides two structs, [`ByteReader`] and [`ByteWriter`], which are both wrappers
-around [`bytes::Buf`] and [`bytes::BufMut`] respectively.
-Generally, you will want to use [`ByteReader`] and [`ByteWriter`] when you are reading and writing binary data manually.
+The [`io`](https://docs.rs/binary-util/latest/binary_util/io) module provides a way to contingiously write and read binary data with the garauntees of being panic-free.
+This module provides two structs, [`ByteReader`](https://docs.rs/binary-util/latest/binary_util/interfaces) and [`ByteWriter`](https://docs.rs/binary-util/latest/binary_util/interfaces), which are both wrappers
+around [`bytes::Buf`](https://docs.rs/bytes/1.4.0/bytes/buf/trait.Buf.html) and [`bytes::BufMut`](https://docs.rs/bytes/1.4.0/bytes/buf/trait.BufMut.html) respectively.
+Generally, you will want to use [`ByteReader`](https://docs.rs/binary-util/latest/binary_util/io/struct.ByteReader.html) and [`ByteWriter`](https://docs.rs/binary-util/latest/binary_util/io/struct.ByteWriter.html) when you are reading and writing binary data manually.
+
 **Read Example:**
 The following example shows how to read a varint from a stream:
 
@@ -70,7 +71,7 @@ fn main() {
 A more real-world use-case of this module could be a simple pong server,
 where you have two packets, `Ping` and `Pong`, that respectively get relayed
 over udp.
-This is an example using both [`ByteReader`] and [`ByteWriter`] utilizing [`std::net::UdpSocket`]
+This is an example using both [`ByteReader`](https://docs.rs/binary-util/latest/binary_util/io/struct.ByteReader.html) and [`ByteWriter`](https://docs.rs/binary-util/latest/binary_util/io/struct.ByteWriter.html) utilizing [`std::net::UdpSocket`](https://docs.rs/binary-util/latest)
 to send and receive packets.
 
 ```rust
@@ -132,15 +133,15 @@ fn main() -> std::io::Result<()> {
 
 # Interfaces
 
-The [`interfaces`] module provides a way to implement reading and writing binary data with
-two traits, [`Reader`] and [`Writer`].
-Generally, you will refer to using [`BinaryIo`] when you are implementing or enum; However in the
-scenario you are implementing a type that may not be compatible with [`BinaryIo`], you can use
+The [`interfaces`](https://docs.rs/binary-util/latest/binary_utils/interfaces) module provides a way to implement reading and writing binary data with
+two traits, [`Reader`](https://docs.rs/binary-util/latest/binary_util/interfaces/trait.Reader.html) and [`Writer`](https://docs.rs/binary-util/latest/binary_util/interfaces/trait.Writer.html).
+Generally, you will refer to using [`BinaryIo`](https://docs.rs/binary-util-derive/latest) when you are implementing or enum; However in the
+scenario you are implementing a type that may not be compatible with [`BinaryIo`](https://docs.rs/binary-util-derive/latest), you can use
 these traits instead.
 
 **Example:**
-The following example implements the [`Reader`] and [`Writer`] traits for a `HelloPacket` allowing
-it to be used with [`BinaryIo`]; this example also allows you to read and write the packet with an
+The following example implements the [`Reader`](https://docs.rs/binary-util/latest/binary_util/interfaces/trait.Reader.html) and [`Writer`](https://docs.rs/binary-util/latest/binary_util/interfaces/trait.Writer.html) traits for a `HelloPacket` allowing
+it to be used with [`BinaryIo`](https://docs.rs/binary-util-derive/latest); this example also allows you to read and write the packet with an
 easier convention.
 
 ```rust
@@ -173,7 +174,7 @@ impl Writer<HelloPacket> for HelloPacket {
 }
 ```
 
-With the example above, you now are able to read and write the packet with [`BinaryIo`],
+With the example above, you now are able to read and write the packet with [`BinaryIo`](https://docs.rs/binary-util-derive/latest),
 as well as the added functionality of being able to read and write the packet with
 easier with the `read` and `write` methods that are now implemented.
 
@@ -192,11 +193,11 @@ fn main() {
 
 # Codegen
 
-The [`BinaryIo`] derive macro provides a way to implement both [`Reader`] and [`Writer`] for a type.
+The [`BinaryIo`](https://docs.rs/binary-util-derive/latest) derive macro provides a way to implement both [`Reader`](https://docs.rs/binary-util/latest/binary_util/interfaces/trait.Reader.html) and [`Writer`](https://docs.rs/binary-util/latest/binary_util/interfaces/trait.Writer.html) for a type.
 This macro is extremely useful when you are trying to implement multiple data structures that you want
-to seemlessly read and write with the [`io`] module.
+to seemlessly read and write with the [`io`](https://docs.rs/binary-util/latest/binary_util/io) module.
 **Example:**
-The following example implements the [`BinaryIo`] trait for a `HelloPacket`, shortening the previous
+The following example implements the [`BinaryIo`](https://docs.rs/binary-util-derive/latest) trait for a `HelloPacket`, shortening the previous
 example to just a few lines of code.
 
 ```rust
