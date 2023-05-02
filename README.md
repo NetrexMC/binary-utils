@@ -7,6 +7,11 @@ A panic-free binary utility crate to read/write binary streams over the wire.
 
 ---
 
+# Packages
+This repository is split into two crates:
+* [`binary-util`](./binary-util) - The main crate.
+* [`binary-util-derive`](./binary-util-derive) - A crate to derive [`binary_util::interfaces::Reader`](https://docs.rs/binary-util/latest/binary_util/interfaces/trait.Reader.html) and [`binary_util::interfaces::Writer`](https://docs.rs/binary-util/latest/binary_util/interfaces/trait.Writer.html) for structs and enums.
+
 BinaryUtils provides the following features:
 
 * [`binary_util::io`](https://docs.rs/binary-util/latest/binary_util/io), to read and write to streams manually.
