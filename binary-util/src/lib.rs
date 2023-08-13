@@ -16,17 +16,17 @@
 //! [`binary_util::types`]: crate::types
 //!
 //! <style>
-//!   .warning {
-//!     background: rgba(255,76,76,0.34);
+//!   .warning2 {
+//!     background: rgba(255,76,76,0.34) !important;
 //!     padding: 0.75em;
 //!     border-left: 2px solid #fc0f0f;
 //!   }
 //!
-//!    .warning code {
-//!         background: rgba(96,37,37,0.64);
+//!    .warning2 code {
+//!         background: rgba(96,37,37,0.64) !important;
 //!     }
 //! </style>
-//! <div class="warning">
+//! <div class="warning2">
 //!     <strong>v0.4.0</strong> is the next major release of Binary Utils and will contain breaking changes.
 //!     <br>
 //!     These changes include:
