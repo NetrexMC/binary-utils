@@ -44,7 +44,14 @@ mod legacy;
 ///     B(Test)
 /// }
 /// ```
+/// <p style="background:rgba(255,181,77,0.16);padding:0.75em;border-left: 2px solid orange;">
+///     <strong>Warning:</strong> This module is deprecated and will be removed in <strong>v0.4.0</strong>.
+/// </p>
 #[proc_macro_derive(BinaryStream)]
+#[deprecated(
+    since = "3.0.0",
+    note = "This is a legacy proc-macro that is used to generate the BinaryStream\nDeprecated: use BinaryReader, and BinaryWriter instead."
+)]
 pub fn derive_stream(input: TokenStream) -> TokenStream {
     // return syn::Error::new_spanned(
     //     // parse_macro_input!(input as DeriveInput),

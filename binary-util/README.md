@@ -7,6 +7,7 @@ BinaryUtils provides the following features:
 * [`binary_util::interfaces`](https://docs.rs/binary-util/latest/binary_util/interfaces), to allow automation of reading data structures.
 * [`binary_util::BinaryIo`](https://docs.rs/binary-util-derive/latest), to automatically implement [`binary_util::interfaces::Reader`](https://docs.rs/binary-util/latest/binary_util/interfaces)
   and [`binary_util::interfaces::Writer`](https://docs.rs/binary-util/latest/binary_util/interfaces) .
+* [`binary_util::types`](https://docs.rs/binary-util/latest/binary_util/types) for reading and writing non-primitive types like `u24` and `varint`.
 
 # Getting Started
 
@@ -14,14 +15,14 @@ Binary Utils is available on [crates.io](https://crates.io/crates/binary_util), 
 
 ```toml
 [dependencies]
-binary_util = "0.3.0"
+binary_util = "0.3.4"
 ```
 
 Optionally, if you wish to remove the `derive` feature, you can add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-binary_util = { version = "0.3.0", default-features = false }
+binary_util = { version = "0.3.4", default-features = false }
 ```
 
 To explicitly enable derive, you can use:
@@ -183,5 +184,51 @@ fn main() {
         friends: vec!["Bob".to_string(), "Joe".to_string()]
     };
     buf.write_type(&packet).unwrap();
+}
+```
+
+# Types
+The [`types`](https://docs.rs/binary-util/latest/binary_utils/types) module provides a way to implement non-primitive types when using the [`BinaryIo`](https://docs.rs/binary-util/latest/binary_util/derive.BinaryIo.html) derive macro.
+
+This module provides the following helper types:
+* [`varu32`](https://docs.rs/binary-util/latest/binary_util/types/struct.varu32.html - An unsigned 32-bit variable length integer
+* [`vari32`](https://docs.rs/binary-util/latest/binary_util/types/struct.vari32.html - A signed 32-bit variable length integer
+* [`varu64`](https://docs.rs/binary-util/latest/binary_util/types/struct.varu64.html - An unsigned 64-bit variable length integer
+* [`vari64`](https://docs.rs/binary-util/latest/binary_util/types/struct.vari64.html - A signed 64-bit variable length integer
+* [`u24`](https://docs.rs/binary-util/latest/binary_util/types/struct.u24.html) - A 24-bit unsigned integer
+* [`i24`](https://docs.rs/binary-util/latest/binary_util/types/struct.i24.html) - A 24-bit signed integer
+* [`LE`](https://docs.rs/binary-util/latest/binary_util/types/struct.LE.html) - A little endian type
+* [`BE`](https://docs.rs/binary-util/latest/binary_util/types/struct.BE.html) - A big endian type
+
+**General Usage:**
+ ```rust
+use binary_util::BinaryIo;
+use binary_util::io::{ByteReader, ByteWriter};
+use binary_util::types::{varu64, varu32, u24, i24, LE, BE};
+
+#[derive(BinaryIo)]
+pub struct ProxyStatusPacket {
+    pub clients: u24,
+    pub max_clients: u24,
+    pub net_download: varu32,
+    pub net_upload: varu64,
+}
+
+fn main() {
+    let mut buf = ByteWriter::new();
+    let packet = ProxyStatusPacket {
+        clients: 10,
+        max_clients: 100,
+        net_download: 1000.into(),
+        net_upload: 1000.into()
+    };
+
+    buf.write_type(&packet).unwrap();
+    let mut buf = ByteReader::from(buf.as_slice());
+    let packet = ProxyStatusPacket::read(&mut buf).unwrap();
+    println!("Clients: {}", packet.clients);
+    println!("Max Clients: {}", packet.max_clients);
+    println!("Net Download: {}", packet.net_download.0);
+    println!("Net Upload: {}", packet.net_upload.0);
 }
 ```

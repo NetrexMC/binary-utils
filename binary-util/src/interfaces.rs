@@ -1,10 +1,27 @@
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use crate::io::{ByteReader, ByteWriter};
-
-pub type LE<T> = std::num::Wrapping<T>;
+use crate::types::{i24, u24, vari32, vari64, varu32, varu64, BE, LE};
 
 macro_rules! impl_reader {
+    ($(LE<$t:ty>, $method:ident),*) => {
+        $(
+            impl Reader<LE<$t>> for LE<$t> {
+                fn read(buf: &mut ByteReader) -> Result<LE<$t>, std::io::Error> {
+                    buf.$method().map(LE::new)
+                }
+            }
+        )*
+    };
+    ($(BE<$t:ty>, $method:ident),*) => {
+        $(
+            impl Reader<BE<$t>> for BE<$t> {
+                fn read(buf: &mut ByteReader) -> Result<BE<$t>, std::io::Error> {
+                    buf.$method().map(BE::new)
+                }
+            }
+        )*
+    };
     ($($t:ty, $method: tt),*) => {
         $(
             impl Reader<$t> for $t {
@@ -17,6 +34,24 @@ macro_rules! impl_reader {
 }
 
 macro_rules! impl_writer {
+    ($(LE<$t:ty>, $method:ident),*) => {
+        $(
+            impl Writer for LE<$t> {
+                fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+                    buf.$method(**self)
+                }
+            }
+        )*
+    };
+    ($(BE<$t:ty>, $method:ident),*) => {
+        $(
+            impl Writer for BE<$t> {
+                fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+                    buf.$method(**self)
+                }
+            }
+        )*
+    };
     ($($t:ty, $method: tt),*) => {
         $(
             impl Writer for $t {
@@ -59,6 +94,14 @@ pub trait Reader<Output> {
     ///
     /// For automatic implementations, use the `#[derive(BinaryIo)]` macro.
     fn read(buf: &mut ByteReader) -> Result<Output, std::io::Error>;
+
+    /// Reads `Self` from a `&[u8]`.
+    ///
+    /// This is a convenience method that creates a `ByteReader` from the slice and calls `read`.
+    fn read_from_slice(buf: &[u8]) -> Result<Output, std::io::Error> {
+        let mut reader = ByteReader::from(buf);
+        Self::read(&mut reader)
+    }
 }
 
 // default implementations on primitive types.
@@ -96,18 +139,52 @@ impl_reader!(
 );
 
 // little endian implementations on primitive types.
-// impl_reader!(
-//     LE<u16>, read_u16_le,
-//     LE<u32>, read_u32_le,
-//     LE<u64>, read_u64_le,
-//     LE<u128>, read_u128_le,
-//     LE<i16>, read_i16_le,
-//     LE<i32>, read_i32_le,
-//     LE<i64>, read_i64_le,
-//     LE<i128>, read_i128_le,
-//     LE<f32>, read_f32_le,
-//     LE<f64>, read_f64_le
-// );
+impl_reader!(
+    LE<u16>,
+    read_u16_le,
+    LE<u32>,
+    read_u32_le,
+    LE<u64>,
+    read_u64_le,
+    LE<u128>,
+    read_u128_le,
+    LE<i16>,
+    read_i16_le,
+    LE<i32>,
+    read_i32_le,
+    LE<i64>,
+    read_i64_le,
+    LE<i128>,
+    read_i128_le,
+    LE<f32>,
+    read_f32_le,
+    LE<f64>,
+    read_f64_le
+);
+
+// big endian explicit implementations on primitive types.
+impl_reader!(
+    BE<u16>,
+    read_u16,
+    BE<u32>,
+    read_u32,
+    BE<u64>,
+    read_u64,
+    BE<u128>,
+    read_u128,
+    BE<i16>,
+    read_i16,
+    BE<i32>,
+    read_i32,
+    BE<i64>,
+    read_i64,
+    BE<i128>,
+    read_i128,
+    BE<f32>,
+    read_f32,
+    BE<f64>,
+    read_f64
+);
 
 impl<T> Reader<Vec<T>> for Vec<T>
 where
@@ -183,6 +260,66 @@ impl Reader<SocketAddr> for SocketAddr {
     }
 }
 
+impl Reader<varu32> for varu32 {
+    fn read(buf: &mut ByteReader) -> Result<varu32, std::io::Error> {
+        Ok(varu32(buf.read_var_u32()?))
+    }
+}
+
+impl Reader<vari32> for vari32 {
+    fn read(buf: &mut ByteReader) -> Result<vari32, std::io::Error> {
+        Ok(vari32(buf.read_var_i32()?))
+    }
+}
+
+impl Reader<varu64> for varu64 {
+    fn read(buf: &mut ByteReader) -> Result<varu64, std::io::Error> {
+        Ok(varu64(buf.read_var_u64()?))
+    }
+}
+
+impl Reader<vari64> for vari64 {
+    fn read(buf: &mut ByteReader) -> Result<vari64, std::io::Error> {
+        Ok(vari64(buf.read_var_i64()?))
+    }
+}
+
+impl Reader<LE<u24>> for LE<u24> {
+    fn read(buf: &mut ByteReader) -> Result<LE<u24>, std::io::Error> {
+        Ok(LE(buf.read_u24()?.into()))
+    }
+}
+
+impl Reader<BE<u24>> for BE<u24> {
+    fn read(buf: &mut ByteReader) -> Result<BE<u24>, std::io::Error> {
+        Ok(BE(buf.read_u24()?.into()))
+    }
+}
+
+impl Reader<LE<i24>> for LE<i24> {
+    fn read(buf: &mut ByteReader) -> Result<LE<i24>, std::io::Error> {
+        Ok(LE(buf.read_i24()?.into()))
+    }
+}
+
+impl Reader<BE<i24>> for BE<i24> {
+    fn read(buf: &mut ByteReader) -> Result<BE<i24>, std::io::Error> {
+        Ok(BE(buf.read_i24()?.into()))
+    }
+}
+
+impl Reader<u24> for u24 {
+    fn read(buf: &mut ByteReader) -> Result<u24, std::io::Error> {
+        Ok(u24(buf.read_u24()?))
+    }
+}
+
+impl Reader<i24> for i24 {
+    fn read(buf: &mut ByteReader) -> Result<i24, std::io::Error> {
+        Ok(i24(buf.read_i24()?))
+    }
+}
+
 /// Allows you to write to a `ByteWriter` without needing to know the type.
 ///
 /// ```ignore
@@ -226,6 +363,10 @@ impl_writer!(
     write_u16,
     i16,
     write_i16,
+    u24,
+    write_u24,
+    i24,
+    write_i24,
     u32,
     write_u32,
     i32,
@@ -248,6 +389,53 @@ impl_writer!(
     write_string
 );
 
+// little endian implementations on primitive types.
+impl_writer!(
+    LE<u16>,
+    write_u16_le,
+    LE<u32>,
+    write_u32_le,
+    LE<u64>,
+    write_u64_le,
+    LE<u128>,
+    write_u128_le,
+    LE<i16>,
+    write_i16_le,
+    LE<i32>,
+    write_i32_le,
+    LE<i64>,
+    write_i64_le,
+    LE<i128>,
+    write_i128_le,
+    LE<f32>,
+    write_f32_le,
+    LE<f64>,
+    write_f64_le
+);
+
+// big endian explicit implementations on primitive types.
+impl_writer!(
+    BE<u16>,
+    write_u16,
+    BE<u32>,
+    write_u32,
+    BE<u64>,
+    write_u64,
+    BE<u128>,
+    write_u128,
+    BE<i16>,
+    write_i16,
+    BE<i32>,
+    write_i32,
+    BE<i64>,
+    write_i64,
+    BE<i128>,
+    write_i128,
+    BE<f32>,
+    write_f32,
+    BE<f64>,
+    write_f64
+);
 impl Writer for String {
     fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
         buf.write_string(self)
@@ -316,7 +504,56 @@ impl Writer for SocketAddr {
         Ok(())
     }
 }
-/// ## Deprecated
+
+impl Writer for LE<u24> {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_u24_le(self.0)
+    }
+}
+
+impl Writer for BE<u24> {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_u24(self.0)
+    }
+}
+
+impl Writer for LE<i24> {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_i24_le(self.0)
+    }
+}
+
+impl Writer for BE<i24> {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_i24(self.0)
+    }
+}
+
+impl Writer for varu32 {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_var_u32(self.0)
+    }
+}
+
+impl Writer for varu64 {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_var_u64(self.0)
+    }
+}
+
+impl Writer for vari32 {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_var_i32(self.0)
+    }
+}
+
+impl Writer for vari64 {
+    fn write(&self, buf: &mut ByteWriter) -> Result<(), std::io::Error> {
+        buf.write_var_i64(self.0)
+    }
+}
+
+///
 /// __**This trait exists only for backwards compatibility.**__
 ///
 /// If you wish to read and write from a `ByteReader` or `ByteWriter`,
@@ -362,6 +599,13 @@ impl Writer for SocketAddr {
 ///     }
 /// }
 /// ```
+/// <p style="background:rgba(255,181,77,0.16);padding:0.75em;border-left: 2px solid orange;">
+///     <strong>Warning:</strong> This module is deprecated and will be removed in <strong>v0.4.0</strong>.
+/// </p>
+#[deprecated(
+    since = "0.3.0",
+    note = "This module is deprecated and will be removed in v0.4.0. Use the `Reader` and `Writer` traits instead."
+)]
 pub trait Streamable<T>: Reader<T> + Writer {
     /// Writes `self` to the given buffer.
     fn parse(&self) -> Result<Vec<u8>, crate::error::BinaryError> {

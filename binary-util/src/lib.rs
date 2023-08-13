@@ -6,24 +6,26 @@
 //! * [`binary_util::interfaces`], to allow automation of reading data structures.
 //! * [`binary_util::BinaryIo`], to automatically implement [`binary_util::interfaces::Reader`]
 //!   and [`binary_util::interfaces::Writer`] .
+//! * [`binary_util::types`] for reading and writing non-primitive types like `u24` and `varint`.
 //!
 //! [`binary_util::io`]: crate::io
 //! [`binary_util::interfaces`]: crate::interfaces
 //! [`binary_util::BinaryIo`]: crate::BinaryIo
 //! [`binary_util::interfaces::Reader`]: crate::interfaces::Reader
 //! [`binary_util::interfaces::Writer`]: crate::interfaces::Writer
+//! [`binary_util::types`]: crate::types
 //!
 //! # Getting Started
 //! Binary Utils is available on [crates.io](https://crates.io/crates/binary_util), add the following to your `Cargo.toml`:
 //! ```toml
 //! [dependencies]
-//! binary_util = "0.3.0"
+//! binary_util = "0.3.4"
 //! ```
 //!
 //! Optionally, if you wish to remove the `macros` feature, you can add the following to your `Cargo.toml`:
 //! ```toml
 //! [dependencies]
-//! binary_util = { version = "0.3.0", default-features = false }
+//! binary_util = { version = "0.3.4", default-features = false }
 //! ```
 //!
 //! # Binary IO
@@ -206,6 +208,63 @@
 //! [`Writer`]: crate::interfaces::Writer
 //! [`BinaryIo`]: crate::BinaryIo
 //!
+//! # Types
+//! The [`types`] module provides a way to implement non-primitive types when using the [`BinaryIo`] derive macro.
+
+//! This module provides the following helper types:
+//! * [`varu32`] - An unsigned 32-bit variable length integer
+//! * [`vari32`] - A signed 32-bit variable length integer
+//! * [`varu64`] - An unsigned 64-bit variable length integer
+//! * [`vari64`] - A signed 64-bit variable length integer
+//! * [`u24`] - A 24-bit unsigned integer
+//! * [`i24`] - A 24-bit signed integer
+//! * [`LE`] - A little endian type
+//! * [`BE`] - A big endian type
+//!
+//! **General Usage:**
+//! ```ignore
+//! use binary_util::BinaryIo;
+//! use binary_util::io::{ByteReader, ByteWriter};
+//! use binary_util::types::{varu64, varu32, u24, i24, LE, BE};
+//!
+//! #[derive(BinaryIo)]
+//! pub struct ProxyStatusPacket {
+//!     pub clients: u24,
+//!     pub max_clients: u24,
+//!     pub net_download: varu32,
+//!     pub net_upload: varu64,
+//! }
+//!
+//! fn main() {
+//!     let mut buf = ByteWriter::new();
+//!     let packet = ProxyStatusPacket {
+//!         clients: 10,
+//!         max_clients: 100,
+//!         net_download: 1000.into(),
+//!         net_upload: 1000.into()
+//!     };
+//!
+//!     buf.write_type(&packet).unwrap();
+//!     let mut buf = ByteReader::from(buf.as_slice());
+//!     let packet = ProxyStatusPacket::read(&mut buf).unwrap();
+//!     println!("Clients: {}", packet.clients);
+//!     println!("Max Clients: {}", packet.max_clients);
+//!     println!("Net Download: {}", packet.net_download.0);
+//!     println!("Net Upload: {}", packet.net_upload.0);
+//! }
+//! ```
+//!
+//! [`types`]: crate::types
+//! [`varu32`]: crate::types::varu32
+//! [`vari32`]: crate::types::vari32
+//! [`varu64`]: crate::types::varu64
+//! [`vari64`]: crate::types::vari64
+//! [`u24`]: crate::types::u24
+//! [`i24`]: crate::types::i24
+//! [`LE`]: crate::types::LE
+//! [`BE`]: crate::types::BE
+//! [`BinaryIo`]: crate::BinaryIo
+//!
 //! # Codegen
 //! The [`BinaryIo`] derive macro provides a way to implement both [`Reader`] and [`Writer`] for a type.
 //! This macro is extremely useful when you are trying to implement multiple data structures that you want
@@ -276,10 +335,17 @@ pub use binary_util_derive::*;
 /// ```
 pub mod io;
 pub mod pool;
+/// This module contains all of the types that are used within the `binary_util` crate.
+/// For example, Sometimes you may need to use a `u24` or `varu32` type, on structs,
+/// and this module provides those types.
+pub mod types;
 /// This is a legacy module that will be removed in the future.
 /// This module has been replaced in favor of `std::io::Error`.
 ///
-/// # This module is deprecated
+/// <p style="background:rgba(255,181,77,0.16);padding:0.75em;border-left: 2px solid orange;">
+///     <strong>Warning:</strong> This module is deprecated and will be removed in <strong>v0.4.0</strong>.
+/// </p>
+#[deprecated = "This module is deprecated in favor of std::io::Error."]
 pub mod error {
     /// An enum consisting of a Binary Error
     /// (recoverable)

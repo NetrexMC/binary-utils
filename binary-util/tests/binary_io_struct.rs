@@ -1,5 +1,6 @@
 use binary_util::interfaces::{Reader, Writer};
 use binary_util::io::ByteReader;
+use binary_util::types::{BE, LE};
 use binary_util::BinaryIo;
 
 #[derive(BinaryIo, Debug)]
@@ -99,4 +100,27 @@ struct SpecialStruct(bool, #[skip] Option<u8>, #[skip] Option<u8>);
 fn special_struct_write() {
     let special_struct = SpecialStruct(true, None, None);
     assert_eq!(special_struct.write_to_bytes().unwrap().as_slice(), &[1]);
+}
+
+#[derive(BinaryIo, Debug, PartialEq)]
+pub struct MixedEndianStruct {
+    a: LE<u16>,
+    b: BE<u32>,
+    c: LE<u64>,
+    d: BE<u16>,
+}
+
+#[test]
+fn mixed_endian_struct_write() {
+    let mixed_endian_struct = MixedEndianStruct {
+        a: 65535.into(),
+        b: 69420.into(),
+        c: 100.into(),
+        d: 5.into(),
+    };
+
+    assert_eq!(
+        mixed_endian_struct.write_to_bytes().unwrap().as_slice(),
+        &[255, 255, 0, 1, 15, 44, 100, 0, 0, 0, 0, 0, 0, 0, 0, 5]
+    );
 }

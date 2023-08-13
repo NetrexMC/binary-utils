@@ -1,10 +1,10 @@
 #![allow(dead_code)]
+use lazy_static::lazy_static;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::{quote, format_ident, TokenStreamExt, ToTokens};
+use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 use regex::Regex;
-use syn::{DataEnum, Fields, Error};
-use lazy_static::lazy_static;
+use syn::{DataEnum, Error, Fields};
 
 use super::util::attrs::{parse_attribute, IoAttr};
 
@@ -85,7 +85,7 @@ struct ParsedEnumVariant {
     pub read_content: TokenStream2,
     /// The discriminant of this variant.
     /// This is automatically set by the parser.
-    pub discriminant: syn::LitInt
+    pub discriminant: syn::LitInt,
 }
 
 pub(crate) fn derive_enum(
@@ -97,7 +97,11 @@ pub(crate) fn derive_enum(
     let enum_name = ast_ctx.0;
 
     // get the repr attribute if it exists
-    let repr = ast_ctx.1.iter().filter(|attr| attr.path().is_ident("repr")).next();
+    let repr = ast_ctx
+        .1
+        .iter()
+        .filter(|attr| attr.path().is_ident("repr"))
+        .next();
 
     // if there's no repr, we're using u8, otherwise we're using the repr specified.
     let repr_type = match repr {
@@ -105,15 +109,12 @@ pub(crate) fn derive_enum(
             let repr = repr.parse_args::<syn::Ident>().unwrap();
             // todo validate the repr
             repr
-        },
+        }
         None => {
             // we need to force the user to specify a repr attribute
             error_stream.append_all(
-                Error::new_spanned(
-                    &enum_name,
-                    "Enum must have a #[repr] attribute."
-                )
-                .to_compile_error()
+                Error::new_spanned(&enum_name, "Enum must have a #[repr] attribute.")
+                    .to_compile_error(),
             );
             return TokenStream::new();
         }
@@ -146,20 +147,20 @@ pub(crate) fn derive_enum(
                         error_stream.append_all(
                             Error::new_spanned(
                                 expr,
-                                "Discriminant must be a primitive integer literal."
+                                "Discriminant must be a primitive integer literal.",
                             )
-                            .to_compile_error()
+                            .to_compile_error(),
                         );
                         return TokenStream::new();
                     }
-                },
+                }
                 Err(_) => {
                     error_stream.append_all(
                         Error::new_spanned(
                             expr,
-                            "Discriminant must be a primitive integer literal."
+                            "Discriminant must be a primitive integer literal.",
                         )
-                        .to_compile_error()
+                        .to_compile_error(),
                     );
                     return TokenStream::new();
                 }
@@ -169,7 +170,7 @@ pub(crate) fn derive_enum(
             // todo parse descend vs ascend, currently the order doesnt matter.
             curr_discrim = match curr_discrim {
                 Some(discrim) => Some(discrim + 1),
-                None => Some(0)
+                None => Some(0),
             }
         }
 
@@ -177,22 +178,19 @@ pub(crate) fn derive_enum(
         let attributes = variant
             .attrs
             .iter()
-            .filter_map(|att| {
-                match parse_attribute(&att, error_stream) {
-                    Ok(attr) => {
-                        match attr {
-                            IoAttr::Unknown => None,
-                            _ => Some(attr),
-                        }
-                    }
-                    Err(_) => None
-                }
+            .filter_map(|att| match parse_attribute(&att, error_stream) {
+                Ok(attr) => match attr {
+                    IoAttr::Unknown => None,
+                    IoAttr::Doc(_) => None,
+                    _ => Some(attr),
+                },
+                Err(_) => None,
             })
             .collect::<Vec<super::util::attrs::IoAttr>>();
 
         if let Some(attr) = attributes.first() {
             match *attr {
-                IoAttr::Skip => {},
+                IoAttr::Skip => {}
                 IoAttr::Satisfy(_) | IoAttr::IfPresent(_) | IoAttr::Require(_) => {
                     error_stream.append_all(
                         Error::new_spanned(
@@ -202,7 +200,7 @@ pub(crate) fn derive_enum(
                         .to_compile_error()
                     );
                     return TokenStream::new();
-                },
+                }
                 _ => {}
             }
         }
@@ -233,7 +231,12 @@ pub(crate) fn derive_enum(
         // enum MyEnum {
         //   Test(HERE)
         // }
-        variants.push(parse_enum_variant(variant, &attributes, &discrim, error_stream));
+        variants.push(parse_enum_variant(
+            variant,
+            &attributes,
+            &discrim,
+            error_stream,
+        ));
 
         // this is hacky, but we need to check whether or not the error_stream has any errors.
         // if it does, we need to return an empty token stream.
@@ -243,8 +246,14 @@ pub(crate) fn derive_enum(
     }
 
     // get all write streams from variants
-    let write_streams = variants.iter().map(|variant| variant.write_content.clone()).collect::<Vec<TokenStream2>>();
-    let read_streams = variants.iter().map(|variant| variant.read_content.clone()).collect::<Vec<TokenStream2>>();
+    let write_streams = variants
+        .iter()
+        .map(|variant| variant.write_content.clone())
+        .collect::<Vec<TokenStream2>>();
+    let read_streams = variants
+        .iter()
+        .map(|variant| variant.read_content.clone())
+        .collect::<Vec<TokenStream2>>();
 
     quote! {
         impl ::binary_util::interfaces::Writer for #enum_name {
@@ -291,16 +300,12 @@ fn parse_enum_variant(
                 let inner_attrs = field
                     .attrs
                     .iter()
-                    .filter_map(|att| {
-                        match parse_attribute(&att, error_stream) {
-                            Ok(attr) => {
-                                match attr {
-                                    IoAttr::Unknown => None,
-                                    _ => Some(attr),
-                                }
-                            },
-                            Err(_) => None,
-                        }
+                    .filter_map(|att| match parse_attribute(&att, error_stream) {
+                        Ok(attr) => match attr {
+                            IoAttr::Unknown => None,
+                            _ => Some(attr),
+                        },
+                        Err(_) => None,
                     })
                     .collect::<Vec<super::util::attrs::IoAttr>>();
 
@@ -340,7 +345,7 @@ fn parse_enum_variant(
                     Ok(Self::#variant_name(#(#args),*))
                 }
             ));
-        },
+        }
         Fields::Unit => {
             // Unit variants are easy, we just read/write the discriminant.
             read_content.append_all(quote! {
@@ -351,14 +356,11 @@ fn parse_enum_variant(
                     _binary_writew.write(&mut #curr_discrim.write_to_bytes()?.as_slice())?;
                 },
             });
-        },
+        }
         _ => {
             error_stream.append_all(
-                Error::new_spanned(
-                    &variant.fields,
-                    "Something went really wrong.."
-                )
-                .to_compile_error()
+                Error::new_spanned(&variant.fields, "Something went really wrong..")
+                    .to_compile_error(),
             );
         }
     }
@@ -367,6 +369,6 @@ fn parse_enum_variant(
         name: variant.ident.clone(),
         read_content,
         write_content,
-        discriminant: syn::parse::<syn::LitInt>(quote!(#curr_discrim).into()).unwrap()
+        discriminant: syn::parse::<syn::LitInt>(quote!(#curr_discrim).into()).unwrap(),
     }
 }

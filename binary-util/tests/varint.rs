@@ -33,16 +33,16 @@ fn read_var_i32() {
 #[test]
 fn write_var_u32() {
     let mut buf = ByteWriter::new();
-    buf.write_var_u32(2147483647).unwrap();
+    buf.write_var_u32(2147483647_u32).unwrap();
     assert_eq!(buf.as_slice(), &FIVE_BYTE_VARINT[..]);
     buf.clear();
-    buf.write_var_u32(2097151).unwrap();
+    buf.write_var_u32(2097151_u32).unwrap();
     assert_eq!(buf.as_slice(), &THREE_BYTE_VARINT[..]);
     buf.clear();
-    buf.write_var_u32(255).unwrap();
+    buf.write_var_u32(255_u32).unwrap();
     assert_eq!(buf.as_slice(), &TWO_BYTE_VARINT[..]);
     buf.clear();
-    buf.write_var_u32(127).unwrap();
+    buf.write_var_u32(127_u32).unwrap();
     assert_eq!(buf.as_slice(), &ONE_BYTE_VARINT[..]);
 }
 
@@ -77,7 +77,7 @@ fn read_var_i64() {
 #[test]
 fn write_var_u64() {
     let mut buf = ByteWriter::new();
-    buf.write_var_u64(9223372036854775807).unwrap();
+    buf.write_var_u64(9223372036854775807_u64).unwrap();
     assert_eq!(buf.as_slice(), &NINE_BYTE_LONG[..]);
 }
 

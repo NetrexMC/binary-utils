@@ -122,7 +122,9 @@ pub fn stream_parse(input: DeriveInput) -> Result<TokenStream> {
                                         let lit = v.lit.clone();
                                         match lit {
                                             Lit::Int(literal_value) => {
-                                                let next = literal_value.base10_parse::<u64>().unwrap() + 1;
+                                                let next =
+                                                    literal_value.base10_parse::<u64>().unwrap()
+                                                        + 1;
                                                 // If last field is none, then this is the first field.
                                                 // In this case, we will just write the discriminant as 0.
                                                 last_field = Some(Expr::Lit(ExprLit {

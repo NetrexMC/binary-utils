@@ -14,8 +14,9 @@ pub(crate) mod attrs {
         Satisfy(syn::Expr),
         Require(syn::Ident),
         IfPresent(syn::Ident),
+        Doc(syn::Attribute),
         Skip,
-        Unknown
+        Unknown,
     }
 
     /// Parses the attributes of a struct or enum.
@@ -26,6 +27,11 @@ pub(crate) mod attrs {
         error_stream: &mut TokenStream2,
     ) -> Result<IoAttr, ()> {
         let path = attr.path();
+
+        if path.is_ident("doc") {
+            return Ok(IoAttr::Doc(attr.clone()));
+        }
+
         if path.is_ident("satisfy") {
             // Satisfy is an attribute that allows an expression to be specified
             // this is polyfilled later with `self.EXPRESSION`

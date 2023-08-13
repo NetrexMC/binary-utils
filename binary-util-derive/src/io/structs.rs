@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::{quote, ToTokens, TokenStreamExt, format_ident};
+use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 use regex::Regex;
 use syn::{DataStruct, Fields};
 
@@ -68,12 +68,11 @@ pub(crate) fn derive_struct(
                     .iter()
                     .filter_map(|att| {
                         match super::util::attrs::parse_attribute(&att, error_stream) {
-                            Ok(attr) => {
-                                match attr {
-                                    IoAttr::Unknown => None,
-                                    _ => Some(attr),
-                                }
-                            }
+                            Ok(attr) => match attr {
+                                IoAttr::Unknown => None,
+                                IoAttr::Doc(_) => None,
+                                _ => Some(attr),
+                            },
                             Err(_) => None,
                         }
                     })
@@ -108,7 +107,16 @@ pub(crate) fn derive_struct(
                 if let Some(attr) = attributes.first() {
                     let name = field_name.clone();
                     let n = name.clone().unwrap();
-                    if let Some(v) = parse_attributes(field.to_token_stream(), attr, field_type, quote!(self.#n), name.unwrap(), &mut writer, &mut reader, error_stream) {
+                    if let Some(v) = parse_attributes(
+                        field.to_token_stream(),
+                        attr,
+                        field_type,
+                        quote!(self.#n),
+                        name.unwrap(),
+                        &mut writer,
+                        &mut reader,
+                        error_stream,
+                    ) {
                         return v.into();
                     }
                 } else {
@@ -148,11 +156,9 @@ pub(crate) fn derive_struct(
                     .iter()
                     .filter_map(|att| {
                         match super::util::attrs::parse_attribute(&att, error_stream) {
-                            Ok(attr) => {
-                                match attr {
-                                    IoAttr::Unknown => None,
-                                    _ => Some(attr),
-                                }
+                            Ok(attr) => match attr {
+                                IoAttr::Unknown => None,
+                                _ => Some(attr),
                             },
                             Err(_) => None,
                         }
@@ -173,7 +179,11 @@ pub(crate) fn derive_struct(
                 // parse the field type
                 let field_type = &field.ty;
                 let index = syn::Index::from(i);
-                let field_name = format_ident!("__{}_unnamed_{}", struct_name.to_string().to_lowercase(), index);
+                let field_name = format_ident!(
+                    "__{}_unnamed_{}",
+                    struct_name.to_string().to_lowercase(),
+                    index
+                );
 
                 read_names.push(field_name.clone());
 
@@ -191,7 +201,16 @@ pub(crate) fn derive_struct(
                             return quote!().into();
                         }
                     }
-                    if let Some(v) = parse_attributes(field.to_token_stream(), attr, field_type, quote!(self.#index), field_name, &mut writer, &mut reader, error_stream) {
+                    if let Some(v) = parse_attributes(
+                        field.to_token_stream(),
+                        attr,
+                        field_type,
+                        quote!(self.#index),
+                        field_name,
+                        &mut writer,
+                        &mut reader,
+                        error_stream,
+                    ) {
                         return v.into();
                     }
                 } else {
@@ -235,12 +254,20 @@ pub(crate) fn derive_struct(
     }
 }
 
-fn parse_attributes<'a>(tokens: TokenStream2, attr: &'a IoAttr, ty: &'a syn::Type, write_name: TokenStream2, read_name: syn::Ident, writer: &mut TokenStream2, reader: &mut TokenStream2, error_stream: &mut TokenStream2) -> Option<TokenStream2> {
+fn parse_attributes<'a>(
+    tokens: TokenStream2,
+    attr: &'a IoAttr,
+    ty: &'a syn::Type,
+    write_name: TokenStream2,
+    read_name: syn::Ident,
+    writer: &mut TokenStream2,
+    reader: &mut TokenStream2,
+    error_stream: &mut TokenStream2,
+) -> Option<TokenStream2> {
     // we have an attribute, so we need to do some stuff with it before conditionally parsing.
     match attr {
         IoAttr::Require(id) => {
-            let inner_type: Option<syn::Type> =
-                resolve_generic_type(ty, "Option", error_stream);
+            let inner_type: Option<syn::Type> = resolve_generic_type(ty, "Option", error_stream);
 
             if inner_type.is_none() {
                 error_stream.append_all(syn::Error::new_spanned(
@@ -270,8 +297,7 @@ fn parse_attributes<'a>(tokens: TokenStream2, attr: &'a IoAttr, ty: &'a syn::Typ
         }
         IoAttr::IfPresent(id) => {
             // behaves identically to require but does not error if the field is not present.
-            let inner_type: Option<syn::Type> =
-            resolve_generic_type(ty, "Option", error_stream);
+            let inner_type: Option<syn::Type> = resolve_generic_type(ty, "Option", error_stream);
 
             if inner_type.is_none() {
                 error_stream.append_all(syn::Error::new_spanned(
@@ -294,8 +320,7 @@ fn parse_attributes<'a>(tokens: TokenStream2, attr: &'a IoAttr, ty: &'a syn::Typ
             None
         }
         IoAttr::Satisfy(expr) => {
-            let inner_type: Option<syn::Type> =
-                resolve_generic_type(ty, "Option", error_stream);
+            let inner_type: Option<syn::Type> = resolve_generic_type(ty, "Option", error_stream);
 
             if inner_type.is_none() {
                 error_stream.append_all(syn::Error::new_spanned(
@@ -346,7 +371,7 @@ fn parse_attributes<'a>(tokens: TokenStream2, attr: &'a IoAttr, ty: &'a syn::Typ
                 let #read_name: #ty = Default::default();
             ));
             None
-        },
+        }
         _ => {
             // we don't have an attribute, so we just return the tokens.
             None

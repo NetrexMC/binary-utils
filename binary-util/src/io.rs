@@ -205,6 +205,7 @@ impl ByteReader {
     pub fn read_u24(&mut self) -> Result<u32, std::io::Error> {
         if can_read!(self, 3) {
             if let Ok(num) = self.read_uint(3) {
+                dbg!(num);
                 return Ok(num as u32);
             } else {
                 return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
@@ -231,6 +232,18 @@ impl ByteReader {
     pub fn read_i24(&mut self) -> Result<i32, std::io::Error> {
         if can_read!(self, 3) {
             if let Ok(num) = self.read_int(3) {
+                return Ok(num as i32);
+            } else {
+                return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
+            }
+        } else {
+            return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
+        }
+    }
+
+    pub fn read_i24_le(&mut self) -> Result<i32, std::io::Error> {
+        if can_read!(self, 3) {
+            if let Ok(num) = self.read_int_le(3) {
                 return Ok(num as i32);
             } else {
                 return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
@@ -331,17 +344,8 @@ impl ByteReader {
     /// Reads an unsigned integer from the stream with a varying size
     /// indicated by the `size` parameter.
     pub fn read_uint(&mut self, size: usize) -> Result<u64, std::io::Error> {
-        // todo: Check whether we should use `copy_nonoverlapping` or `self.get_uint`
         if can_read!(self, size) {
-            let mut num = 0u64;
-            let ptr_to = &mut num as *mut u64 as *mut u8;
-            // we're not using for loops because they're slower
-            unsafe {
-                core::ptr::copy_nonoverlapping(self.buf.chunk().as_ptr(), ptr_to, size);
-            }
-            // increment the position
-            self.buf.advance(size);
-            return Ok(num.to_be());
+            return Ok(self.buf.get_uint(size));
         } else {
             return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
         }
@@ -351,14 +355,7 @@ impl ByteReader {
     /// indicated by the `size` parameter.
     pub fn read_uint_le(&mut self, size: usize) -> Result<u64, std::io::Error> {
         if can_read!(self, size) {
-            let mut num = 0u64;
-            let ptr_to = &mut num as *mut u64 as *mut u8;
-            unsafe {
-                core::ptr::copy_nonoverlapping(self.buf.chunk().as_ptr(), ptr_to, size);
-            }
-            // increment the position
-            self.buf.advance(size);
-            return Ok(num.to_le());
+            return Ok(self.buf.get_uint_le(size));
         } else {
             return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
         }
@@ -483,7 +480,18 @@ impl ByteReader {
 
     /// Reads `T` from the stream.
     /// `T` must implement the `Reader` trait and be sized.
+    ///
+    /// # Deprecrated
+    ///
+    /// This function is deprecated and will be removed in `v0.3.4`.
+    #[deprecated(note = "Use `read_type` instead")]
     pub fn read_struct<T: Reader<T>>(&mut self) -> Result<T, std::io::Error> {
+        return self.read_type::<T>();
+    }
+
+    /// Reads `T` from the stream.
+    /// `T` must implement the `Reader` trait and be sized.
+    pub fn read_type<T: Reader<T>>(&mut self) -> Result<T, std::io::Error> {
         return T::read(self);
     }
 
@@ -604,20 +612,20 @@ impl ByteWriter {
     write_fn!(write_i16, i16, put_i16, 2);
     write_fn!(write_i16_le, i16, put_i16_le, 2);
 
-    pub fn write_u24(&mut self, num: u32) -> Result<(), std::io::Error> {
-        return self.write_uint(num.into(), 3);
+    pub fn write_u24<I: Into<u32>>(&mut self, num: I) -> Result<(), std::io::Error> {
+        return self.write_uint(num.into().into(), 3);
     }
 
-    pub fn write_u24_le(&mut self, num: u32) -> Result<(), std::io::Error> {
-        return self.write_uint_le(num.into(), 3);
+    pub fn write_u24_le<I: Into<u32>>(&mut self, num: I) -> Result<(), std::io::Error> {
+        return self.write_uint_le(num.into().into(), 3);
     }
 
-    pub fn write_i24(&mut self, num: i32) -> Result<(), std::io::Error> {
-        return self.write_int(num.into(), 3);
+    pub fn write_i24<I: Into<i32>>(&mut self, num: I) -> Result<(), std::io::Error> {
+        return self.write_int(num.into().into(), 3);
     }
 
-    pub fn write_i24_le(&mut self, num: i32) -> Result<(), std::io::Error> {
-        return self.write_int_le(num.into(), 3);
+    pub fn write_i24_le<I: Into<i32>>(&mut self, num: I) -> Result<(), std::io::Error> {
+        return self.write_int_le(num.into().into(), 3);
     }
 
     write_fn!(write_u32, u32, put_u32, 4);
