@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use binary_util::{error::BinaryError, BinaryStream, Streamable};
 
 #[derive(Debug, BinaryStream, PartialEq)]

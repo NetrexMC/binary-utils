@@ -7,6 +7,11 @@ A panic-free binary utility crate to read/write binary streams over the wire.
 
 ---
 
+> [!WARNING]
+> Version `0.4.0` is the next major version of Binary Utils, and will fully remove the `Streamable`
+> trait, and replace it with `Reader` and `Writer`. This will be a breaking change, and will require
+> you to update your code to use the new `Reader` and `Writer` traits.
+
 # Packages
 This repository is split into two crates:
 * [`binary-util`](./binary-util) - The main crate.
@@ -26,21 +31,21 @@ Binary Utils is available on [crates.io](https://crates.io/crates/binary_util), 
 
 ```toml
 [dependencies]
-binary_util = "0.3.4"
+binary_util = "0.3.3"
 ```
 
 Optionally, if you wish to remove the `derive` feature, you can add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-binary_util = { version = "0.3.4", default-features = false }
+binary_util = { version = "0.3.3", default-features = false }
 ```
 
 To explicitly enable derive, you can use:
 
 ```toml
 [dependencies]
-binary_util = { version = "0.3.0", default-features = false, features = ["derive"] }
+binary_util = { version = "0.3.3", default-features = false, features = ["derive"] }
 ```
 
 # Binary IO

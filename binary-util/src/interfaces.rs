@@ -1,3 +1,6 @@
+// todo: remove this in 4.0.0
+#![allow(deprecated)]
+
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use crate::io::{ByteReader, ByteWriter};

@@ -15,6 +15,33 @@
 //! [`binary_util::interfaces::Writer`]: crate::interfaces::Writer
 //! [`binary_util::types`]: crate::types
 //!
+//! <style>
+//!   .warning {
+//!     background: rgba(255,76,76,0.34);
+//!     padding: 0.75em;
+//!     border-left: 2px solid #fc0f0f;
+//!   }
+//!
+//!    .warning code {
+//!         background: rgba(96,37,37,0.64);
+//!     }
+//! </style>
+//! <div class="warning">
+//!     <strong>v0.4.0</strong> is the next major release of Binary Utils and will contain breaking changes.
+//!     <br>
+//!     These changes include:
+//!     <ul>
+//!        <li>
+//!             Removal of the <code>Streamable</code> trait in favor of
+//!             <code>binary_util::io::Reader</code> and <code>binary_util::io::Writer</code>.
+//!         </li>
+//!        <li>
+//!             Removal of the <code>Error</code> module in favor of
+//!             <code>std::io::Error</code>.
+//!         </li>
+//!     </ul>
+//! </div>
+//!
 //! # Getting Started
 //! Binary Utils is available on [crates.io](https://crates.io/crates/binary_util), add the following to your `Cargo.toml`:
 //! ```toml
@@ -400,5 +427,6 @@ pub mod error {
     }
 }
 
+#[allow(deprecated)]
 pub use interfaces::Streamable;
 pub use io::{ByteReader, ByteWriter};

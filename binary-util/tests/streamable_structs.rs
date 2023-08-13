@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use binary_util::{BinaryStream, Streamable};
 
 #[derive(Debug, BinaryStream)]
