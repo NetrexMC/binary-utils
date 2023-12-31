@@ -7,11 +7,6 @@ A panic-free binary utility crate to read/write binary streams over the wire.
 
 ---
 
-> [!WARNING]
-> Version `0.4.0` is the next major version of Binary Utils, and will fully remove the `Streamable`
-> trait, and replace it with `Reader` and `Writer`. This will be a breaking change, and will require
-> you to update your code to use the new `Reader` and `Writer` traits.
-
 # Packages
 This repository is split into two crates:
 * [`binary-util`](./binary-util) - The main crate.
