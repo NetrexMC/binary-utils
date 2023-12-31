@@ -1,7 +1,7 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::{
     collections::VecDeque,
-    io::{Error, IoSlice},
+    io::{Error, IoSlice, Read, Write},
 };
 
 use crate::interfaces::{Reader, Writer};
@@ -205,7 +205,6 @@ impl ByteReader {
     pub fn read_u24(&mut self) -> Result<u32, std::io::Error> {
         if can_read!(self, 3) {
             if let Ok(num) = self.read_uint(3) {
-                dbg!(num);
                 return Ok(num as u32);
             } else {
                 return Err(Error::new(std::io::ErrorKind::UnexpectedEof, ERR_EOB));
@@ -582,13 +581,21 @@ impl From<IoSlice<'_>> for ByteWriter {
     }
 }
 
-impl From<&[u8]> for ByteWriter {
+impl From<&'_[u8]> for ByteWriter {
     fn from(slice: &[u8]) -> Self {
         let mut buf = BytesMut::with_capacity(slice.len());
         buf.put_slice(slice);
         return Self { buf };
     }
 }
+
+// impl From<&'a [u8]> for ByteWriter {
+//     fn from(slice: &'a [u8]) -> Self {
+//         let mut buf = BytesMut::with_capacity(slice.len());
+//         buf.put_slice(slice);
+//         return Self { buf };
+//     }
+// }
 
 impl From<ByteReader> for ByteWriter {
     fn from(reader: ByteReader) -> Self {
@@ -873,5 +880,91 @@ impl ByteWriter {
 
     pub fn clear(&mut self) {
         self.buf.clear();
+    }
+}
+
+/// ByteStream is similar to both `ByteReader` and `ByteWriter`,
+/// however, it is unique in that it allows streaming of data.
+///
+/// This is useful for when you want to read/write data from a stream
+/// Consider the following example:
+/// ```ignore
+/// use binary_util::io::ByteReader;
+/// use binary_util::io::ByteWriter;
+///
+/// fn main() -> std::io::Result<()> {
+///     let mut tcp = TcpStream::connect("127.0.0.1:34254")?;
+///     let mut buffer: [u8; 1024] = [0; 1024];
+///
+///     loop {
+///         let bytes = tcp.read(&mut buffer)?;
+///         let stream = BinaryReader::from(&buffer[..bytes]);
+///
+///         let data = stream.read_string()?;
+///         println!("Received: {}", data);
+///     }
+///     Ok(())
+/// }
+/// ```
+/// Not only is this exhaustive and require a lot of unnecessary allocations,
+/// but also requires you to keep track of the bytes that have been read.
+/// If you need to read more bytes than the size of the buffer you run into a problem.
+///
+/// You would have to add unnecessary logic to keep track of the bytes that have been read,
+/// and then you would have to constantly copy the bytes that have been read into a new buffer,
+/// that way you can read the stream in segments checking for failures.
+///
+///
+/// The `ByteStream` struct aims to solve this problem by allowing you to
+/// read/write streams of data continuously.
+///
+/// Consider the following example which has been refactored to use `ByteStream`:
+/// ```ignore
+/// use binary_util::io::ByteStream;
+///
+/// fn main() -> std::io::Result<()> {
+///     let mut tcp = TcpStream::connect("127.0.0.1:34254")?;
+///
+///     let mut stream = ByteStream::new(tcp);
+///
+///     loop {
+///         let data = stream.read_string()?;
+///         println!("Received: {}", data);
+///     }
+/// }
+/// ```
+pub struct ByteStream<R: ?Sized + Read + Write> {
+    inner: R,
+}
+
+impl<R> Read for ByteStream<R>
+where
+    R: Read + Write,
+{
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
+        self.inner.read(buf)
+    }
+}
+
+impl<R> Write for ByteStream<R>
+where
+    R: Read + Write,
+{
+    fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
+        self.inner.write(buf)
+    }
+
+    fn flush(&mut self) -> Result<(), std::io::Error> {
+        self.inner.flush()
+    }
+}
+
+impl<R> ByteStream<R> where R: Read + Write {
+    pub fn new(inner: R) -> Self {
+        Self { inner }
+    }
+
+    pub fn into_inner(self) -> R {
+        self.inner
     }
 }

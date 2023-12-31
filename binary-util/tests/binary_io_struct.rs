@@ -124,3 +124,18 @@ fn mixed_endian_struct_write() {
         &[255, 255, 0, 1, 15, 44, 100, 0, 0, 0, 0, 0, 0, 0, 0, 5]
     );
 }
+
+#[test]
+fn mixed_endian_struct_read() {
+    let mixed_endian_struct = MixedEndianStruct {
+        a: 65535.into(),
+        b: 69420.into(),
+        c: 100.into(),
+        d: 5.into(),
+    };
+
+    let mut reader = ByteReader::from(mixed_endian_struct.write_to_bytes().unwrap().as_slice());
+    let read_struct = MixedEndianStruct::read(&mut reader).unwrap();
+
+    assert_eq!(read_struct, mixed_endian_struct);
+}

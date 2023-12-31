@@ -15,33 +15,6 @@
 //! [`binary_util::interfaces::Writer`]: crate::interfaces::Writer
 //! [`binary_util::types`]: crate::types
 //!
-//! <style>
-//!   .warning2 {
-//!     background: rgba(255,76,76,0.34) !important;
-//!     padding: 0.75em;
-//!     border-left: 2px solid #fc0f0f;
-//!   }
-//!
-//!    .warning2 code {
-//!         background: rgba(96,37,37,0.64) !important;
-//!     }
-//! </style>
-//! <div class="warning2">
-//!     <strong>v0.4.0</strong> is the next major release of Binary Utils and will contain breaking changes.
-//!     <br>
-//!     These changes include:
-//!     <ul>
-//!        <li>
-//!             Removal of the <code>Streamable</code> trait in favor of
-//!             <code>binary_util::io::Reader</code> and <code>binary_util::io::Writer</code>.
-//!         </li>
-//!        <li>
-//!             Removal of the <code>Error</code> module in favor of
-//!             <code>std::io::Error</code>.
-//!         </li>
-//!     </ul>
-//! </div>
-//!
 //! # Getting Started
 //! Binary Utils is available on [crates.io](https://crates.io/crates/binary_util), add the following to your `Cargo.toml`:
 //! ```toml
@@ -366,67 +339,5 @@ pub mod pool;
 /// For example, Sometimes you may need to use a `u24` or `varu32` type, on structs,
 /// and this module provides those types.
 pub mod types;
-/// This is a legacy module that will be removed in the future.
-/// This module has been replaced in favor of `std::io::Error`.
-///
-/// <p style="background:rgba(255,181,77,0.16);padding:0.75em;border-left: 2px solid orange;">
-///     <strong>Warning:</strong> This module is deprecated and will be removed in <strong>v0.4.0</strong>.
-/// </p>
-#[deprecated = "This module is deprecated in favor of std::io::Error."]
-pub mod error {
-    /// An enum consisting of a Binary Error
-    /// (recoverable)
-    #[derive(Debug, PartialEq)]
-    pub enum BinaryError {
-        /// Offset is out of bounds
-        ///
-        /// **Tuple Values:**
-        /// - `usize` = Given Offset.
-        /// - `usize` = Stream length.
-        /// - `&'static str` = Message to add on to the error.
-        OutOfBounds(usize, usize, &'static str),
 
-        /// Similar to `OutOfBounds` except it means;
-        /// the stream tried to read more than possible.
-        ///
-        /// **Tuple Values:**
-        /// - `usize` = Stream length.
-        EOF(usize),
-
-        /// A known error that was recoverable to safely proceed the stack.
-        RecoverableKnown(String),
-
-        /// An unknown error occurred, but it wasn't critical,
-        /// we can safely proceed on the stack.
-        RecoverableUnknown,
-    }
-
-    impl BinaryError {
-        pub fn get_message(&self) -> String {
-            match self {
-                Self::OutOfBounds(offset, length, append) => {
-                    format!("Offset {} out of range for a buffer size with: {}. {}", offset, length, append)
-                },
-                Self::EOF(length) => format!("Buffer reached End Of File at offset: {}", length),
-                Self::RecoverableKnown(msg) => msg.clone(),
-                Self::RecoverableUnknown => "An interruption occurred when performing a binary operation, however this error was recovered safely.".to_string()
-            }
-        }
-    }
-
-    impl From<std::io::Error> for BinaryError {
-        fn from(_error: std::io::Error) -> Self {
-            Self::RecoverableUnknown
-        }
-    }
-
-    impl std::fmt::Display for BinaryError {
-        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-            write!(f, "{}", self.get_message())
-        }
-    }
-}
-
-#[allow(deprecated)]
-pub use interfaces::Streamable;
 pub use io::{ByteReader, ByteWriter};
